@@ -1,0 +1,15 @@
+{
+  "functions": [
+    {
+      "name": "calculate",
+      "description": "Evaluates a basic arithmetic expression (add, subtract, multiply, divide, exponents) and returns the numeric result.",
+      "parameters": {
+        "expression": {
+          "description": "The arithmetic expression to evaluate, e.g. '25 * 4' or '100 / 5 + 2'.",
+          "type": "string",
+          "required": true
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,122 @@
+default_agent: my_calc_agent
+agents:
+  deploy_my_agent:
+    name: deploy_my_agent
+    language: python
+    node_version: null
+    entrypoint: C:/Users/HP/Documents/Agentcore2026/deploy_my_agent.py
+    deployment_type: container
+    runtime_type: null
+    platform: linux/arm64
+    container_runtime: none
+    source_path: null
+    aws:
+      execution_role: arn:aws:iam::486517829337:role/AmazonBedrockAgentCoreSDKRuntime-us-east-1-dd475819a2
+      execution_role_auto_create: false
+      account: '486517829337'
+      region: us-east-1
+      ecr_repository: 486517829337.dkr.ecr.us-east-1.amazonaws.com/bedrock-agentcore-deploy_my_agent
+      ecr_auto_create: false
+      s3_path: null
+      s3_auto_create: false
+      network_configuration:
+        network_mode: PUBLIC
+        network_mode_config: null
+      protocol_configuration:
+        server_protocol: HTTP
+      observability:
+        enabled: true
+      lifecycle_configuration:
+        idle_runtime_session_timeout: null
+        max_lifetime: null
+    bedrock_agentcore:
+      agent_id: deploy_my_agent-LbE4MZ9PQJ
+      agent_arn: arn:aws:bedrock-agentcore:us-east-1:486517829337:runtime/deploy_my_agent-LbE4MZ9PQJ
+      agent_session_id: null
+    codebuild:
+      project_name: bedrock-agentcore-deploy_my_agent-builder
+      execution_role: arn:aws:iam::486517829337:role/AmazonBedrockAgentCoreSDKCodeBuild-us-east-1-dd475819a2
+      source_bucket: bedrock-agentcore-codebuild-sources-486517829337-us-east-1
+    memory:
+      mode: NO_MEMORY
+      memory_id: null
+      memory_arn: null
+      memory_name: null
+      event_expiry_days: 30
+      first_invoke_memory_check_done: false
+      was_created_by_toolkit: false
+    identity:
+      credential_providers: []
+      workload: null
+    aws_jwt:
+      enabled: false
+      audiences: []
+      signing_algorithm: ES384
+      issuer_url: null
+      duration_seconds: 300
+    authorizer_configuration: null
+    request_header_configuration: null
+    oauth_configuration: null
+    api_key_env_var_name: null
+    api_key_credential_provider_name: null
+    is_generated_by_agentcore_create: false
+  my_calc_agent:
+    name: my_calc_agent
+    language: python
+    node_version: '20'
+    entrypoint: C:/Users/HP/Documents/Agentcore2026/my_calc_agent.py
+    deployment_type: container
+    runtime_type: null
+    platform: linux/arm64
+    container_runtime: none
+    source_path: C:\Users\HP\Documents\Agentcore2026
+    aws:
+      execution_role: arn:aws:iam::486517829337:role/AmazonBedrockAgentCoreSDKRuntime-us-east-1-38d8137722
+      execution_role_auto_create: false
+      account: '486517829337'
+      region: us-east-1
+      ecr_repository: 486517829337.dkr.ecr.us-east-1.amazonaws.com/bedrock-agentcore-my_calc_agent
+      ecr_auto_create: false
+      s3_path: null
+      s3_auto_create: false
+      network_configuration:
+        network_mode: PUBLIC
+        network_mode_config: null
+      protocol_configuration:
+        server_protocol: HTTP
+      observability:
+        enabled: true
+      lifecycle_configuration:
+        idle_runtime_session_timeout: null
+        max_lifetime: null
+    bedrock_agentcore:
+      agent_id: my_calc_agent-xaQGOjCEkZ
+      agent_arn: arn:aws:bedrock-agentcore:us-east-1:486517829337:runtime/my_calc_agent-xaQGOjCEkZ
+      agent_session_id: null
+    codebuild:
+      project_name: bedrock-agentcore-my_calc_agent-builder
+      execution_role: arn:aws:iam::486517829337:role/AmazonBedrockAgentCoreSDKCodeBuild-us-east-1-38d8137722
+      source_bucket: bedrock-agentcore-codebuild-sources-486517829337-us-east-1
+    memory:
+      mode: STM_ONLY
+      memory_id: my_calc_agent_mem-S5BS4IFNoZ
+      memory_arn: arn:aws:bedrock-agentcore:us-east-1:486517829337:memory/my_calc_agent_mem-S5BS4IFNoZ
+      memory_name: my_calc_agent_mem
+      event_expiry_days: 30
+      first_invoke_memory_check_done: true
+      was_created_by_toolkit: false
+    identity:
+      credential_providers: []
+      workload: null
+    aws_jwt:
+      enabled: false
+      audiences: []
+      signing_algorithm: ES384
+      issuer_url: null
+      duration_seconds: 300
+    authorizer_configuration: null
+    request_header_configuration: null
+    oauth_configuration: null
+    api_key_env_var_name: null
+    api_key_credential_provider_name: null
+    is_generated_by_agentcore_create: false

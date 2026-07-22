@@ -1,0 +1,17 @@
+{
+  "targets": {
+    "default": {
+      "resources": {
+        "runtimes": {
+          "CalcAgentCli": {
+            "runtimeId": "CalcAgentCli_CalcAgentCli-HB1JIt53EP",
+            "runtimeArn": "arn:aws:bedrock-agentcore:us-east-1:486517829337:runtime/CalcAgentCli_CalcAgentCli-HB1JIt53EP",
+            "roleArn": "arn:aws:iam::486517829337:role/AgentCore-CalcAgentCli-de-ApplicationAgentCalcAgent-ohXw0RBVJXF6"
+          }
+        },
+        "stackName": "AgentCore-CalcAgentCli-default",
+        "deployHash": "f3fb3bae25a9a831"
+      }
+    }
+  }
+}
