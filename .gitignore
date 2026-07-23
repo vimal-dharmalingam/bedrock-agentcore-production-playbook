@@ -25,6 +25,20 @@ vendor/
 deployment_package/
 deployment_package.zip
 
+# Terraform -- state files can embed real resource details (ARNs, role attributes, etc.) and
+# are regenerable via `terraform init`/`apply`, never committed as a matter of course. The
+# provider binary cache (.terraform/) is large and machine-specific. Lock file IS kept (not
+# listed here) since it pins provider versions for reproducibility, which is worth sharing.
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
 # OS
 .DS_Store
 Thumbs.db

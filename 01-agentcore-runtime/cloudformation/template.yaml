@@ -1,0 +1,135 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  AgentCore Runtime for the calculator agent, deployed via raw hand-written CloudFormation.
+  Fully self-contained -- builds and pushes its own image to its own ECR repo (see README
+  for the docker build/push commands), rather than depending on another module's image.
+  CloudFormation only orchestrates resources, it can't build a Docker image itself the way
+  CDK's fromAsset() did, so the build step happens separately, by hand, before this template
+  is deployed.
+
+Parameters:
+  ContainerImageUri:
+    Type: String
+    Description: >
+      Full ECR image URI to deploy. Defaults to this module's own dedicated repo
+      (bedrock-agentcore-calc-agent-cloudformation) -- built from the Dockerfile in this
+      same folder, independent of any other 01-agentcore-runtime sub-method.
+    Default: "486517829337.dkr.ecr.us-east-1.amazonaws.com/bedrock-agentcore-calc-agent-cloudformation:latest"
+
+  RuntimeName:
+    Type: String
+    Default: calc_agent_cloudformation
+    Description: Must match ^[a-zA-Z][a-zA-Z0-9_]{0,47}$
+
+Resources:
+  # Trust policy: only the AgentCore Runtime service itself can assume this role, and only
+  # for a runtime named calc_agent_cloudformation* in this account -- same shape CDK
+  # generated automatically; here it's written out by hand.
+  ExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      # Explicit name matching the *BedrockAgentCore* pattern your existing IAM-management
+      # policy is scoped to -- without this, CloudFormation would auto-generate a name like
+      # CalcAgentCfnStack-ExecutionRole-XXXXX that wouldn't match, causing a second
+      # AccessDenied right after fixing the CloudFormation one.
+      RoleName: BedrockAgentCoreCfnExecutionRole
+      Description: Execution role for the CloudFormation-deployed AgentCore Runtime
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: bedrock-agentcore.amazonaws.com
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref "AWS::AccountId"
+              ArnLike:
+                aws:SourceArn: !Sub "arn:aws:bedrock-agentcore:${AWS::Region}:${AWS::AccountId}:runtime/${RuntimeName}*"
+
+  # Same permission set proven working in manual-container-build/deploy_container.py's
+  # EXECUTION_POLICY, translated from a Python dict into a CloudFormation resource.
+  # No L2 construct to auto-generate this the way CDK did -- every statement is explicit.
+  ExecutionPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: CloudFormationExecutionPolicy
+      Roles:
+        - !Ref ExecutionRole
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: LogGroupAccess
+            Effect: Allow
+            Action:
+              - logs:DescribeLogStreams
+              - logs:CreateLogGroup
+            Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/bedrock-agentcore/runtimes/*"
+          - Sid: DescribeLogGroups
+            Effect: Allow
+            Action: logs:DescribeLogGroups
+            Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*"
+          - Sid: LogStreamAccess
+            Effect: Allow
+            Action:
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/bedrock-agentcore/runtimes/*:log-stream:*"
+          - Sid: XRayAccess
+            Effect: Allow
+            Action:
+              - xray:PutTraceSegments
+              - xray:PutTelemetryRecords
+              - xray:GetSamplingRules
+              - xray:GetSamplingTargets
+            Resource: "*"
+          - Sid: CloudWatchMetrics
+            Effect: Allow
+            Action: cloudwatch:PutMetricData
+            Resource: "*"
+            Condition:
+              StringEquals:
+                cloudwatch:namespace: bedrock-agentcore
+          - Sid: BedrockModelInvocation
+            Effect: Allow
+            Action:
+              - bedrock:InvokeModel
+              - bedrock:InvokeModelWithResponseStream
+            Resource:
+              - "arn:aws:bedrock:*::foundation-model/*"
+              - !Sub "arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:*"
+          - Sid: ECRImagePull
+            Effect: Allow
+            Action:
+              - ecr:BatchGetImage
+              - ecr:GetDownloadUrlForLayer
+              - ecr:BatchCheckLayerAvailability
+            Resource: !Sub "arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/bedrock-agentcore-calc-agent-cloudformation"
+          - Sid: ECRAuth
+            Effect: Allow
+            Action: ecr:GetAuthorizationToken
+            Resource: "*"
+
+  # The actual runtime -- same AWS::BedrockAgentCore::Runtime resource type CDK synthesized
+  # for us, ContainerConfiguration pointing at this module's own image (built and pushed by
+  # hand beforehand -- see README -- CloudFormation only references it, doesn't build it).
+  CalcAgentRuntime:
+    Type: AWS::BedrockAgentCore::Runtime
+    DependsOn: ExecutionPolicy
+    Properties:
+      AgentRuntimeName: !Ref RuntimeName
+      AgentRuntimeArtifact:
+        ContainerConfiguration:
+          ContainerUri: !Ref ContainerImageUri
+      RoleArn: !GetAtt ExecutionRole.Arn
+      NetworkConfiguration:
+        NetworkMode: PUBLIC
+      ProtocolConfiguration: HTTP
+
+Outputs:
+  AgentRuntimeId:
+    Description: The AgentCore Runtime ID -- use this to invoke the agent
+    Value: !GetAtt CalcAgentRuntime.AgentRuntimeId
+  AgentRuntimeArn:
+    Description: The AgentCore Runtime ARN
+    Value: !GetAtt CalcAgentRuntime.AgentRuntimeArn

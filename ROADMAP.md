@@ -61,18 +61,20 @@ Agentcore2026/
 
 ## Status (updated as we go)
 
-- [x] `01-agentcore-runtime` — reorganized into the full subfolder structure. `starter-toolkit-cli/`,
-      `boto3-direct/`, `direct-code-zip/`, and `manual-container-build/` done and working end to
-      end; `scripts/` done; `cdk/`, `terraform/`, `cloudformation/` still scaffolded with
-      placeholder READMEs, not yet built.
+- [x] `01-agentcore-runtime` — 7 of 8 sub-methods done and working end to end:
+      `starter-toolkit-cli/`, `boto3-direct/`, `direct-code-zip/`, `manual-container-build/`,
+      `cdk/`, `cloudformation/`, `terraform/`. `scripts/` done. Same calculator agent deployed
+      via every mechanism, each folder self-contained and independently runnable.
+      **`console/` (pure AWS Console click-through, no code) added as an 8th planned sub-method
+      — scaffolded with a plan, build it next session.**
 - [x] `02-agentcore-cli` — scaffolded, calculator tool ported, local dev, deploy (via CDK), and
       invoke all confirmed working end to end.
 - [x] `03-classic-bedrock-agent-lambda` — fully working end to end (console-built agent + Lambda
       action group, boto3 test script with trace support). See its README for platform-status
       context (Bedrock Agents Classic maintenance mode) and exam-alignment notes above.
-- [ ] `04` through `09` and `iam/` — not started. **Next up per original plan: pick one of the
-      unstarted `01-agentcore-runtime` sub-methods (cdk, terraform, cloudformation) to build
-      next, before moving to compute-target modules.**
+- [ ] `04` through `09` and `iam/` — not started. **Next up per original plan: pick a
+      compute-target module (Lambda, EC2, ECS/Fargate, App Runner, or EKS) to start deploying
+      the agent outside AgentCore Runtime entirely.**
 
 ## Exam alignment — AWS Certified Generative AI Developer - Professional (AIP-C01)
 Confirmed against the official exam guide (docs.aws.amazon.com/aws-certification/latest/ai-professional-01/):
@@ -120,6 +122,17 @@ custom code) — worth its own module once the core compute-target modules are d
 - `cdk bootstrap` needs broad/admin-level permissions — a one-time, account-wide step
 - Windows terminal quoting (`cmd.exe` vs bash) breaks copy-pasted CLI examples from docs
 - Windows console default codepage isn't UTF-8 — breaks on emoji in model responses
+- Building arm64 Docker images on x86 Windows goes through QEMU emulation — if pip/uv falls back
+  to compiling anything from source, it can hang 30+ minutes; fix is pre-fetching wheels on the
+  host with `uv --only-binary=:all:` and never running `pip install` inside the emulated container
+- `bedrock_agentcore` SDK's server binds `127.0.0.1` unless `DOCKER_CONTAINER=1` is set — container
+  looks healthy, every external request just gets an empty reply, no error logged
+- Each IaC tool needs its own permission gap discovered independently, even for the same
+  underlying AWS action — CDK, CloudFormation, and Terraform each triggered distinct AccessDenied
+  errors (`cloudformation:DescribeStacks`, `ecr:ListTagsForResource`, etc.) despite deploying the
+  exact same resource type, because each tool's client makes different background API calls
+- `cmd.exe` treats `<` and `>` as redirection operators even outside code context — typing a
+  placeholder like `<VALUE>` literally fails with a file-not-found error, not a syntax error
 
 ## Working IAM user
 `always_learner` (account 486517829337) — deliberately narrow permissions, so every new AWS
