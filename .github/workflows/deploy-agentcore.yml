@@ -1,0 +1,57 @@
+name: Deploy AgentCore Agent (boto3-direct)
+
+# CI stage: checkout + install deps (no AWS calls yet).
+# CD stage: OIDC-assume an AWS role, then run the exact same deploy_my_agent.py you'd run by
+# hand -- the starter toolkit's Runtime.launch() builds the image (via CodeBuild, no local
+# Docker needed), pushes to ECR, and creates/updates the AgentCore Runtime agent in one call.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "01-agentcore-runtime/boto3-direct/**"
+      - ".github/workflows/deploy-agentcore.yml"
+  workflow_dispatch: {}   # lets you trigger it manually from the Actions tab too
+
+permissions:
+  id-token: write   # required for OIDC -- this is what lets AWS trust the GitHub-issued token
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: 01-agentcore-runtime/boto3-direct
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Deploy agent
+        id: deploy
+        run: python deploy_my_agent.py
+
+      - name: Smoke test invoke
+        env:
+          AGENT_ARN: ${{ steps.deploy.outputs.agent_arn }}
+        run: |
+          python -c "
+          from invoke_agent import invoke_agent
+          import os
+          result, _ = invoke_agent(os.environ['AGENT_ARN'], 'What is 25 * 4?')
+          print('Smoke test response:', result)
+          assert result is not None, 'Agent did not return a response'
+          "

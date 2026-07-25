@@ -37,7 +37,14 @@ def deploy():
     # Launch
     result = agentcore_runtime.launch()
     print(f"✅ Agent deployed: {result.agent_arn}")
-    
+
+    # If running inside a GitHub Actions job, expose the ARN as a step output so a later
+    # step (e.g. a smoke-test invoke) can read it without re-deploying or hardcoding it.
+    github_output = os.getenv("GITHUB_OUTPUT")
+    if github_output:
+        with open(github_output, "a") as fh:
+            fh.write(f"agent_arn={result.agent_arn}\n")
+
     return result
 
 if __name__ == "__main__":

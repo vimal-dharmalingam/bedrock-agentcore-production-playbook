@@ -1,0 +1,95 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "EcrForAgentImage",
+            "Effect": "Allow",
+            "Action": [
+                "ecr:CreateRepository",
+                "ecr:DescribeRepositories",
+                "ecr:GetAuthorizationToken",
+                "ecr:BatchGetImage",
+                "ecr:BatchCheckLayerAvailability",
+                "ecr:GetDownloadUrlForLayer",
+                "ecr:PutImage",
+                "ecr:InitiateLayerUpload",
+                "ecr:UploadLayerPart",
+                "ecr:CompleteLayerUpload",
+                "ecr:SetRepositoryPolicy",
+                "ecr:ListTagsForResource",
+                "ecr:TagResource"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "CodeBuildForImageBuild",
+            "Effect": "Allow",
+            "Action": [
+                "codebuild:CreateProject",
+                "codebuild:UpdateProject",
+                "codebuild:BatchGetProjects",
+                "codebuild:StartBuild",
+                "codebuild:BatchGetBuilds"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "S3ForCodeBuildSourceUpload",
+            "Effect": "Allow",
+            "Action": [
+                "s3:CreateBucket",
+                "s3:PutObject",
+                "s3:GetObject",
+                "s3:ListBucket",
+                "s3:PutBucketPolicy",
+                "s3:PutEncryptionConfiguration",
+                "s3:PutBucketPublicAccessBlock"
+            ],
+            "Resource": [
+                "arn:aws:s3:::bedrock-agentcore-*",
+                "arn:aws:s3:::bedrock-agentcore-*/*"
+            ]
+        },
+        {
+            "Sid": "IamForAutoCreatedExecutionRole",
+            "Effect": "Allow",
+            "Action": [
+                "iam:CreateRole",
+                "iam:GetRole",
+                "iam:PutRolePolicy",
+                "iam:AttachRolePolicy",
+                "iam:PassRole"
+            ],
+            "Resource": "arn:aws:iam::486517829337:role/*AgentCore*"
+        },
+        {
+            "Sid": "BedrockAgentCoreRuntime",
+            "Effect": "Allow",
+            "Action": [
+                "bedrock-agentcore:CreateAgentRuntime",
+                "bedrock-agentcore:UpdateAgentRuntime",
+                "bedrock-agentcore:GetAgentRuntime",
+                "bedrock-agentcore:ListAgentRuntimes",
+                "bedrock-agentcore:InvokeAgentRuntime"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "LogsForCodeBuildAndRuntime",
+            "Effect": "Allow",
+            "Action": [
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+                "logs:DescribeLogGroups"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "StsIdentity",
+            "Effect": "Allow",
+            "Action": "sts:GetCallerIdentity",
+            "Resource": "*"
+        }
+    ]
+}
