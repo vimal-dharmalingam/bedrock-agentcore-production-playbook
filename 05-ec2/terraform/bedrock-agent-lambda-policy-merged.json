@@ -1,0 +1,113 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "BedrockAgentManagement",
+            "Effect": "Allow",
+            "Action": [
+                "bedrock:CreateAgent",
+                "bedrock:GetAgent",
+                "bedrock:UpdateAgent",
+                "bedrock:DeleteAgent",
+                "bedrock:ListAgents",
+                "bedrock:PrepareAgent",
+                "bedrock:CreateAgentActionGroup",
+                "bedrock:UpdateAgentActionGroup",
+                "bedrock:GetAgentActionGroup",
+                "bedrock:ListAgentActionGroups",
+                "bedrock:DeleteAgentActionGroup",
+                "bedrock:CreateAgentAlias",
+                "bedrock:UpdateAgentAlias",
+                "bedrock:GetAgentAlias",
+                "bedrock:ListAgentAliases",
+                "bedrock:DeleteAgentAlias",
+                "bedrock:InvokeAgent",
+                "bedrock:TagResource",
+                "bedrock:ListTagsForResource"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "LambdaFunctionManagement",
+            "Effect": "Allow",
+            "Action": [
+                "lambda:CreateFunction",
+                "lambda:GetFunction",
+                "lambda:UpdateFunctionCode",
+                "lambda:UpdateFunctionConfiguration",
+                "lambda:DeleteFunction",
+                "lambda:AddPermission",
+                "lambda:RemovePermission",
+                "lambda:GetPolicy",
+                "lambda:InvokeFunction",
+                "lambda:TagResource"
+            ],
+            "Resource": "arn:aws:lambda:*:486517829337:function:CalcAgent*"
+        },
+        {
+            "Sid": "LambdaListAccess",
+            "Effect": "Allow",
+            "Action": [
+                "lambda:ListFunctions"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "IAMRoleManagementForThisModule",
+            "Effect": "Allow",
+            "Action": [
+                "iam:CreateRole",
+                "iam:GetRole",
+                "iam:PutRolePolicy",
+                "iam:AttachRolePolicy",
+                "iam:DetachRolePolicy",
+                "iam:DeleteRolePolicy",
+                "iam:DeleteRole",
+                "iam:ListRolePolicies",
+                "iam:ListAttachedRolePolicies",
+                "iam:TagRole"
+            ],
+            "Resource": [
+                "arn:aws:iam::486517829337:role/BedrockAgent*",
+                "arn:aws:iam::486517829337:role/CalcAgent*"
+            ]
+        },
+        {
+            "Sid": "IAMInstanceProfileManagement",
+            "Effect": "Allow",
+            "Action": [
+                "iam:CreateInstanceProfile",
+                "iam:GetInstanceProfile",
+                "iam:DeleteInstanceProfile",
+                "iam:AddRoleToInstanceProfile",
+                "iam:RemoveRoleFromInstanceProfile",
+                "iam:ListInstanceProfilesForRole",
+                "iam:TagInstanceProfile"
+            ],
+            "Resource": "arn:aws:iam::486517829337:instance-profile/CalcAgent*"
+        },
+        {
+            "Sid": "PassRoleForBedrockAndLambda",
+            "Effect": "Allow",
+            "Action": "iam:PassRole",
+            "Resource": [
+                "arn:aws:iam::486517829337:role/BedrockAgent*",
+                "arn:aws:iam::486517829337:role/CalcAgent*"
+            ]
+        },
+        {
+            "Sid": "LogsReadForDebugging",
+            "Effect": "Allow",
+            "Action": [
+                "logs:GetLogEvents",
+                "logs:DescribeLogGroups",
+                "logs:DescribeLogStreams",
+                "logs:FilterLogEvents"
+            ],
+            "Resource": [
+                "arn:aws:logs:*:486517829337:log-group:/aws/lambda/CalcAgent*",
+                "arn:aws:logs:*:486517829337:log-group:/aws/bedrock/*"
+            ]
+        }
+    ]
+}

@@ -1,16 +1,27 @@
 # Agentcore2026 — Roadmap
 
 ## Purpose
-Two goals, tracked together:
-1. **Portfolio for job search** — currently GenAI Lead at an investment firm (London), building
-   a public GitHub repo demonstrating full production-level agent deployment skills to support
-   a move to a new role.
-2. **AWS AI certification exam prep** — hands-on practice doubles as study material. Where
+Four goals, tracked together (as of the goals-clarification session):
+1. **Portfolio for job search** — currently GenAI Lead at Aviva (London), building a public
+   GitHub repo demonstrating full production-level agent deployment skills to support a move
+   to a new role.
+2. **Job search deadline** — explicit target: land a new role before end of this year. This
+   makes breadth-and-momentum matter more than exhaustive depth on any single module.
+3. **AWS AI certification exam prep** — hands-on practice doubles as study material. Where
    relevant, note exam-relevant concepts (service architecture, IAM permission models, managed
    vs. self-managed tradeoffs) in module READMEs, not just "it worked" logs.
+4. **Direct work relevance** — Aviva is about to start using AgentCore internally, so this
+   learning has immediate on-the-job payoff, not just interview/exam value.
+5. **Personal AgentCore project (separate initiative, not yet started)** — a customized personal
+   assistant web app, connected to phone location, stay history, calendar, Gmail, a food-tracking
+   history, custom news, Google Drive, with voice capability. Genuinely different in kind from
+   modules 1-9 below (real tool/API integrations and an actual useful agent, vs. deployment-
+   mechanism comparisons using one trivial calculator agent) — likely a stronger portfolio
+   centerpiece than the deployment-comparison repo once built, and maps directly to exam Task 2.1
+   ("Implement agentic AI solutions and tool integrations"). Scope/sequencing/repo location TBD.
 
-Single running example throughout: a simple calculator agent (Strands Agents framework),
-redeployed via every mechanism below so the differences are directly comparable.
+Single running example throughout modules 1-9: a simple calculator agent (Strands Agents
+framework), redeployed via every mechanism below so the differences are directly comparable.
 
 ## Folder structure
 
@@ -40,8 +51,10 @@ Agentcore2026/
 ├── 03-classic-bedrock-agent-lambda/   # different service: Bedrock Agents + Lambda action groups
 │
 ├── 04-lambda/                         # agent as standalone Lambda (container + zip variants)
+│   ├── zip-deploy/
 │   ├── cdk/
-│   └── terraform/
+│   ├── terraform/
+│   └── cloudformation/
 │
 ├── 05-ec2/                            # raw VM (systemd service, security group)
 │   └── terraform/
@@ -61,20 +74,47 @@ Agentcore2026/
 
 ## Status (updated as we go)
 
-- [x] `01-agentcore-runtime` — 7 of 8 sub-methods done and working end to end:
+- [x] `01-agentcore-runtime` — **COMPLETE. All 8 of 8 sub-methods done and working end to end:**
       `starter-toolkit-cli/`, `boto3-direct/`, `direct-code-zip/`, `manual-container-build/`,
-      `cdk/`, `cloudformation/`, `terraform/`. `scripts/` done. Same calculator agent deployed
-      via every mechanism, each folder self-contained and independently runnable.
-      **`console/` (pure AWS Console click-through, no code) added as an 8th planned sub-method
-      — scaffolded with a plan, build it next session.**
+      `cdk/`, `cloudformation/`, `terraform/`, `console/`. `scripts/` done. Same calculator agent
+      deployed via every mechanism, each folder self-contained and independently runnable.
+      `console/` alone surfaced 4 new IAM gaps (VPC read, Bedrock model listing, standalone IAM
+      policy creation) — more than any single CLI/IaC tool, since a UI has to support every
+      possible path through a form, not just the one action a script performs.
 - [x] `02-agentcore-cli` — scaffolded, calculator tool ported, local dev, deploy (via CDK), and
       invoke all confirmed working end to end.
 - [x] `03-classic-bedrock-agent-lambda` — fully working end to end (console-built agent + Lambda
       action group, boto3 test script with trace support). See its README for platform-status
       context (Bedrock Agents Classic maintenance mode) and exam-alignment notes above.
-- [ ] `04` through `09` and `iam/` — not started. **Next up per original plan: pick a
-      compute-target module (Lambda, EC2, ECS/Fargate, App Runner, or EKS) to start deploying
-      the agent outside AgentCore Runtime entirely.**
+- [x] `04-lambda` — **COMPLETE. All 4 methods deployed, invoked, and documented:**
+      `zip-deploy/` (boto3), `cdk/`, `terraform/`, `cloudformation/`. Deliberate exception to
+      the pacing decision below: all 3 IaC tools built for Lambda since it's simple
+      (no Docker/arm64), not just 1-2. `cloudformation/` surfaced a naming-driven gap (stack
+      name didn't match an already-granted `CalcAgent*` pattern) fixed by renaming the stack,
+      not by touching IAM — kept the account under the 10-managed-policy ceiling.
+      **Pacing decision (end-of-year deadline):** `05` onward gets 1-2 solid methods per
+      compute target, not the full 8-method depth `01-agentcore-runtime` got — breadth across
+      `05`-`09` matters more now than exhaustive depth on any single target.
+- [x] `05-ec2` — **COMPLETE. Terraform method deployed, invoked, and documented** (single method,
+      per the pacing decision — first compute target with no managed invoke API, so Terraform
+      does genuine IaaS provisioning: AMI lookup, security group, IAM instance profile, and a
+      `user_data` cloud-init bootstrap running the agent as a FastAPI app behind systemd).
+      By far the longest debugging chain in the project so far — five distinct root causes before
+      it worked: (1) a security-group `description` field rejecting an apostrophe, (2) IAM gaps
+      requiring policy-version extension (account was already at the 10-policy ceiling), (3) a
+      self-inflicted bug where `user_data.sh.tpl`'s own top comment used literal `${...}` syntax,
+      which `templatefile()` substituted mid-comment and corrupted the whole script — found by
+      rendering the template locally and reproducing the exact failure with plain `bash`, byte-
+      for-byte matching the real EC2 console log, before touching AWS again, (4) `terraform
+      apply`'s default in-place user-data update not re-running cloud-init, requiring
+      `user_data_replace_on_change = true`, and (5) AL2023's default `python3` being 3.9, too old
+      for `strands-agents` (needs `python3.11` explicitly). Also confirmed manual stop/start via
+      `aws ec2 stop-instances`/`start-instances` as a cheap way to pause billing between uses —
+      relevant beyond the portfolio, since this is the compute target being considered for the
+      separate personal-assistant project (see Purpose §5), controlled by a future WhatsApp-
+      triggered Lambda (start/stop). See `05-ec2/terraform/README.md` for the full gap-by-gap
+      writeup.
+- [ ] `06` through `09` and `iam/` — not started.
 
 ## Exam alignment — AWS Certified Generative AI Developer - Professional (AIP-C01)
 Confirmed against the official exam guide (docs.aws.amazon.com/aws-certification/latest/ai-professional-01/):
@@ -133,6 +173,26 @@ custom code) — worth its own module once the core compute-target modules are d
   exact same resource type, because each tool's client makes different background API calls
 - `cmd.exe` treats `<` and `>` as redirection operators even outside code context — typing a
   placeholder like `<VALUE>` literally fails with a file-not-found error, not a syntax error
+- AWS's default hard quota of 10 managed policies per IAM user is real and gets hit fast under a
+  "one policy per gap" habit — the durable fix is extending an existing related policy via
+  `aws iam create-policy-version --set-as-default` (versions cap at 5 per policy, so prune old
+  ones eventually), not creating a new standalone policy per fix
+- Terraform's `templatefile()` substitutes `${...}` anywhere it appears in the template file,
+  including inside what's meant to be a plain comment describing the mechanism — writing
+  `${app_py_content}` in a comment sentence spliced real multi-line file content into the middle
+  of that line and corrupted the whole rendered script. Never write a variable's literal
+  dollar-brace syntax in template prose; describe it in words instead
+- `terraform apply`'s default behavior for an `aws_instance` `user_data` change is an in-place
+  stop/modify/start, not a replacement — but EC2 user-data only executes once, at first boot, via
+  cloud-init. A "successful" apply can silently leave the instance running its old boot state.
+  Set `user_data_replace_on_change = true` to force a real replace whenever the boot script itself
+  changes
+- Amazon Linux 2023's unversioned `python3` package is 3.9 — too old for many current libraries
+  (e.g. `strands-agents` needs >=3.10). Install a versioned package (`python3.11`) explicitly
+  rather than assuming the default `python3` is recent
+- When debugging a headless EC2 instance with no SSH/SSM access, `exec > >(tee /var/log/x.log) 2>&1`
+  in the boot script (not a plain `>` redirect) plus `set -x` is what makes the EC2 console's
+  "Get system log" actually useful — a plain redirect sends output where the console can't see it
 
 ## Working IAM user
 `always_learner` (account 486517829337) — deliberately narrow permissions, so every new AWS

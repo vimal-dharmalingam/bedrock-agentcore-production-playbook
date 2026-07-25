@@ -1,25 +1,80 @@
-# console — not started
+# console
 
-Plan: deploy the calculator agent to AgentCore Runtime purely through the AWS Management
-Console — no CLI, no script, no IaC template. The one sub-method that's pure click-through,
-matching how `03-classic-bedrock-agent-lambda` was deliberately built by hand first before
-automating anything.
+Deploys the calculator agent to AgentCore Runtime purely through the AWS Management Console --
+no CLI, no script, no IaC template. Reused the container image already pushed in
+`manual-container-build` (`bedrock-agentcore-calc-agent-manual:latest`) rather than building a
+fresh one -- the point of this module is the click-through experience itself, not another proof
+that the Docker/ECR pipeline works, which has already been demonstrated four times over.
 
-## Rough plan for tomorrow
-1. Build and push a container image to ECR by hand first (reuse the exact same steps as
-   `manual-container-build` -- the console still needs a real image to point at, it doesn't
-   build one for you either).
-2. AWS Console → Amazon Bedrock → AgentCore → Runtime → Create.
-3. Walk through every field by hand: name, container image (browse ECR), execution role
-   (create new vs. select existing -- try reusing `BedrockAgentCoreCfnExecutionRole` or similar
-   to see whether the console enforces any naming/trust-policy assumptions the CLI/IaC paths
-   didn't surface), network mode, protocol.
-4. Test invoke directly from the console's built-in test panel, if one exists, before falling
-   back to `invoke_console_agent.py`.
-5. Document every screen/decision point in this README -- this module's value is the click path
-   itself, not code, so the README needs to be more narrative/annotated than the others.
-6. Compare against every other method's execution role policy once created -- does the console
-   auto-generate one differently from CDK's L2 construct or from what we wrote by hand?
+## Files
+- `invoke_console_agent.py` -- same invoke pattern as every other module, for testing from a
+  terminal in addition to the console's own built-in test panel.
+
+## How to redo end to end
+
+1. Sign in to the AWS Console as `always_learner` (not root -- deliberately, to see what
+   permission gaps the console surfaces that scripted/IaC methods never hit).
+2. Search "AgentCore" in the top console search bar → **Amazon Bedrock AgentCore**.
+3. Left nav → **Runtime** → **Create**.
+4. Fill in:
+   - Runtime name: `calc_agent_console`
+   - Artifact type: **ECR** (the other console option is **S3**, matching `codeConfiguration`
+     vs `containerConfiguration` from every other module -- same two artifact types, same
+     underlying API, just a radio button in the UI instead of a boto3 parameter)
+   - Image URI: `486517829337.dkr.ecr.us-east-1.amazonaws.com/bedrock-agentcore-calc-agent-manual:latest`
+   - Execution role: **Create new** (see IAM section below for what this actually does
+     differently from every other method)
+   - Network mode: Public
+5. Create, wait for it to finish provisioning.
+6. Test directly in the console's own test panel (chat box on the Runtime detail page), or via
+   `python invoke_console_agent.py <AGENT_RUNTIME_ID> "What is 25 * 4?"`.
+
+## What's different from every other method
+
+The console is the only method tonight that required **four separate new IAM grants**, more
+than any single CLI/IaC tool -- because a UI has to proactively populate dropdowns and helper
+sections for options you might click, not just execute the one action you actually asked for.
+Every other method only ever asked for exactly what it needed to complete your specific request.
+
+The console also creates execution role permissions completely differently from every other
+method: it generates a **standalone customer-managed IAM policy**
+(`AmazonBedrockAgentCoreRuntimeExecutionPolicy_<random-suffix>`) and attaches it to the role,
+rather than embedding an inline policy the way our own boto3 scripts, CDK's L2 construct, our
+hand-written CloudFormation, and Terraform's `aws_iam_role_policy` all did. Different IAM action
+entirely (`iam:CreatePolicy` vs `iam:PutRolePolicy`), and a genuinely different governance model
+-- a standalone policy can be reused/audited/versioned independently of the role, which an inline
+policy can't.
+
+## IAM permissions
+
+Four new gaps, all fixed via CloudShell as root, same pattern as every other module -- this
+module alone accounts for a third of every IAM fix made across the whole `01-agentcore-runtime`
+build:
+
+1. **`ec2:DescribeVpcs`** -- the Create form's network configuration section calls this to
+   populate a VPC picker, even when heading toward Public mode. Fixed with
+   `AgentCoreConsoleEc2ReadAccess` (`DescribeVpcs`/`DescribeSubnets`/`DescribeSecurityGroups`,
+   `Resource: "*"` since EC2 `Describe*` actions don't support resource-level ARN scoping at all).
+2. **`bedrock:ListInferenceProfiles`** and **`bedrock:ListFoundationModels`** -- a model-related
+   helper section reads the available model catalog. Fixed with
+   `AgentCoreConsoleBedrockReadAccess`, `ListFoundationModels` needing `Resource: "*"` since it
+   enumerates AWS's public model catalog, not anything account-owned.
+3. **`iam:CreatePolicy`** on a policy named `AmazonBedrockAgentCoreRuntimeExecutionPolicy_*` --
+   the console's different execution-role creation model, described above. Fixed with
+   `AgentCoreConsoleIamPolicyMgmt`, scoped to `arn:aws:iam::486517829337:policy/*BedrockAgentCore*`
+   (same naming-pattern-matching approach used for every role grant, extended to the separate
+   `policy/` ARN namespace).
 
 ## Status
-- [ ] Not started -- planned for next session
+- [x] Runtime created successfully via pure console click-through
+- [x] All 4 new IAM gaps hit and fixed
+- [x] Tested via the console's own built-in test panel -- confirmed working
+- [x] `invoke_console_agent.py` written for terminal-based retesting
+
+## Notes / gotchas
+- The console surfaces more distinct permission gaps than any single CLI or IaC tool, precisely
+  because it has to support every possible path through the form, not just the one you're
+  actually taking -- a good, concrete talking point on why narrow IAM users find real gaps that
+  broad-permission testing never would.
+- Runtime name is `calc_agent_console` -- check `list_agents.py` alongside every other deployed
+  agent from this project.
