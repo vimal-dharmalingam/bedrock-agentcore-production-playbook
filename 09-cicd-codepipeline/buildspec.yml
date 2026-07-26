@@ -23,12 +23,4 @@ phases:
     commands:
       - cd "$CODEBUILD_SRC_DIR/01-agentcore-runtime/boto3-direct"
       - export AGENT_ARN=$(cat agent_arn.txt)
-      - echo "Smoke testing $AGENT_ARN"
-      - >
-        python -c "
-        from invoke_agent import invoke_agent
-        import os
-        result, _ = invoke_agent(os.environ['AGENT_ARN'], 'What is 25 * 4?')
-        print('Smoke test response:', result)
-        assert result is not None, 'Agent did not return a response'
-        "
+      - python smoke_test.py

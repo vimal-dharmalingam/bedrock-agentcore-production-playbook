@@ -47,11 +47,4 @@ jobs:
       - name: Smoke test invoke
         env:
           AGENT_ARN: ${{ steps.deploy.outputs.agent_arn }}
-        run: |
-          python -c "
-          from invoke_agent import invoke_agent
-          import os
-          result, _ = invoke_agent(os.environ['AGENT_ARN'], 'What is 25 * 4?')
-          print('Smoke test response:', result)
-          assert result is not None, 'Agent did not return a response'
-          "
+        run: python smoke_test.py

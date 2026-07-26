@@ -115,6 +115,24 @@ render, even after `chcp 65001` and `set PYTHONIOENCODING=utf-8`. Worked around 
 `boto3`'s `get_log_events` directly via a one-line `python -c` script and writing the result to a
 file with explicit `encoding="utf-8"`, sidestepping the AWS CLI's own output formatter entirely.
 
+## A second non-IAM bug, right after the first one: YAML folded vs. literal block scalars
+
+Once the `cd` bug was fixed, the `BUILD` phase (the actual `deploy_my_agent.py` run) succeeded --
+but `POST_BUILD` (the smoke test) failed with `COMMAND_EXECUTION_ERROR`. The error message showed
+the entire multi-line Python snippet flattened onto a single line
+(`from invoke_agent import invoke_agent import os result, _ = ...`) -- syntactically invalid,
+since Python needs newlines (or semicolons) between statements. Root cause: the original
+`buildspec.yml` used YAML's `>` (**folded**) block scalar for the inline `python -c "..."`
+command, and folded scalars deliberately collapse newlines into spaces -- that's what "folded"
+means. The GitHub Actions equivalent step used `|` (**literal** block scalar, which preserves
+newlines exactly), which is why the same idea worked fine there.
+
+Rather than fix the scalar type and keep relying on fragile inline multi-line shell-quoted Python,
+both pipelines were changed to call a real file instead:
+`01-agentcore-runtime/boto3-direct/smoke_test.py`, invoked with a plain `python smoke_test.py`.
+One script, shared by both CI/CD tools, with none of the YAML block-scalar quoting fragility --
+and a nice side effect: the same smoke-test logic no longer has to be maintained twice.
+
 ## Notes / gotchas
 - Stack name deliberately `CalcAgentCodePipelineStack`, matching the already-granted
   `stack/CalcAgent*/*` pattern in `AgentCoreCloudFormationDeployAccess` — same lesson from
