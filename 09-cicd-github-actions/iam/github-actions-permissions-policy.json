@@ -83,6 +83,18 @@
             "Resource": "*"
         },
         {
+            "Sid": "BedrockAgentCoreWorkloadIdentity",
+            "Effect": "Allow",
+            "Action": [
+                "bedrock-agentcore:CreateWorkloadIdentity",
+                "bedrock-agentcore:GetWorkloadIdentity",
+                "bedrock-agentcore:UpdateWorkloadIdentity",
+                "bedrock-agentcore:DeleteWorkloadIdentity",
+                "bedrock-agentcore:ListWorkloadIdentities"
+            ],
+            "Resource": "*"
+        },
+        {
             "Sid": "LogsForCodeBuildAndRuntime",
             "Effect": "Allow",
             "Action": [

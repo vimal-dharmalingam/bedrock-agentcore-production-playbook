@@ -34,8 +34,10 @@ def deploy():
         agent_name=agent_name
     )
             
-    # Launch
-    result = agentcore_runtime.launch()
+    # Launch. auto_update_on_conflict=True is what makes this idempotent/CI-CD-friendly: the
+    # first run creates the agent, every run after that updates the existing one in place
+    # instead of failing with ConflictException("agent already exists").
+    result = agentcore_runtime.launch(auto_update_on_conflict=True)
     print(f"✅ Agent deployed: {result.agent_arn}")
 
     # If running inside a GitHub Actions job, expose the ARN as a step output so a later
