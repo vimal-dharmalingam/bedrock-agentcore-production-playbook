@@ -1,0 +1,119 @@
+<svg viewBox="0 0 1750 1650" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+<rect x="0" y="0" width="1750" height="1650" fill="#0b1220"/>
+<text x="875.0" y="52" text-anchor="middle" font-size="34" font-weight="700" fill="#f8fafc">Bedrock AgentCore Production Playbook</text>
+<text x="875.0" y="86" text-anchor="middle" font-size="18" fill="#94a3b8">One calculator agent, deployed 10 different ways on AWS</text>
+<line x1="875" y1="760" x2="875.0" y2="180.0" stroke="#64748b" stroke-width="3" stroke-opacity="0.55" />
+<line x1="875" y1="760" x2="1215.9" y2="290.8" stroke="#d97706" stroke-width="3" stroke-opacity="0.55" />
+<line x1="875" y1="760" x2="1426.6" y2="580.8" stroke="#f59e0b" stroke-width="3" stroke-opacity="0.55" />
+<line x1="875" y1="760" x2="1426.6" y2="939.2" stroke="#8b5cf6" stroke-width="3" stroke-opacity="0.55" />
+<line x1="875" y1="760" x2="1215.9" y2="1229.2" stroke="#0891b2" stroke-width="3" stroke-opacity="0.55" />
+<line x1="875" y1="760" x2="875.0" y2="1340.0" stroke="#3b82f6" stroke-width="3" stroke-opacity="0.55" />
+<line x1="875" y1="760" x2="534.1" y2="1229.2" stroke="#0ea5e9" stroke-width="3" stroke-opacity="0.55" />
+<line x1="875" y1="760" x2="323.4" y2="939.2" stroke="#10b981" stroke-width="3" stroke-opacity="0.55" />
+<line x1="875" y1="760" x2="323.4" y2="580.8" stroke="#f43f5e" stroke-width="3" stroke-opacity="0.55" stroke-dasharray="10,8" />
+<line x1="875" y1="760" x2="534.1" y2="290.8" stroke="#6366f1" stroke-width="3" stroke-opacity="0.55" />
+<circle cx="875" cy="760" r="112" fill="#1e293b" stroke="#f8fafc" stroke-width="3"/>
+<text x="875" y="750" text-anchor="middle" font-size="24" font-weight="700" fill="#f8fafc">Calculator</text>
+<text x="875" y="778" text-anchor="middle" font-size="24" font-weight="700" fill="#f8fafc">Agent</text>
+<text x="875" y="802" text-anchor="middle" font-size="14" fill="#94a3b8">Strands Agents</text>
+<rect x="750.0" y="105.0" width="250" height="150" rx="16" ry="16" fill="#111827" stroke="#64748b" stroke-width="3" />
+<rect x="750.0" y="105.0" width="8" height="150" rx="4" ry="4" fill="#64748b"/>
+<text x="984.0" y="129.0" text-anchor="end" font-size="13" font-weight="700" fill="#22c55e">✓ WORKING</text>
+<text x="776.0" y="159.0" font-size="21" font-weight="700" fill="#f8fafc">00 · Local Dev</text>
+<text x="776.0" y="184.0" font-size="14" fill="#64748b" font-weight="600">No AWS — the baseline</text>
+<circle cx="770.0" cy="206.0" r="3" fill="#94a3b8"/>
+<text x="786.0" y="211.0" font-size="14.5" fill="#cbd5e1">local-python</text>
+<circle cx="770.0" cy="231.0" r="3" fill="#94a3b8"/>
+<text x="786.0" y="236.0" font-size="14.5" fill="#cbd5e1">local-docker</text>
+<rect x="1050.9" y="130.8" width="330" height="320" rx="16" ry="16" fill="#111827" stroke="#d97706" stroke-width="3" />
+<rect x="1050.9" y="130.8" width="8" height="320" rx="4" ry="4" fill="#d97706"/>
+<text x="1364.9" y="154.8" text-anchor="end" font-size="13" font-weight="700" fill="#22c55e">✓ WORKING</text>
+<text x="1076.9" y="184.8" font-size="21" font-weight="700" fill="#f8fafc">01 · AgentCore Runtime</text>
+<text x="1076.9" y="209.8" font-size="14" fill="#d97706" font-weight="600">Bedrock AgentCore Runtime</text>
+<circle cx="1070.9" cy="231.8" r="3" fill="#94a3b8"/>
+<text x="1086.9" y="236.8" font-size="14.5" fill="#cbd5e1">CLI (starter toolkit)</text>
+<circle cx="1070.9" cy="256.8" r="3" fill="#94a3b8"/>
+<text x="1086.9" y="261.8" font-size="14.5" fill="#cbd5e1">boto3-direct</text>
+<circle cx="1070.9" cy="281.8" r="3" fill="#94a3b8"/>
+<text x="1086.9" y="286.8" font-size="14.5" fill="#cbd5e1">Direct code-zip</text>
+<circle cx="1070.9" cy="306.8" r="3" fill="#94a3b8"/>
+<text x="1086.9" y="311.8" font-size="14.5" fill="#cbd5e1">Manual Docker build</text>
+<circle cx="1070.9" cy="331.8" r="3" fill="#94a3b8"/>
+<text x="1086.9" y="336.8" font-size="14.5" fill="#cbd5e1">CDK</text>
+<circle cx="1070.9" cy="356.8" r="3" fill="#94a3b8"/>
+<text x="1086.9" y="361.8" font-size="14.5" fill="#cbd5e1">Terraform</text>
+<circle cx="1070.9" cy="381.8" r="3" fill="#94a3b8"/>
+<text x="1086.9" y="386.8" font-size="14.5" fill="#cbd5e1">CloudFormation</text>
+<circle cx="1070.9" cy="406.8" r="3" fill="#94a3b8"/>
+<text x="1086.9" y="411.8" font-size="14.5" fill="#cbd5e1">Console</text>
+<rect x="1276.6" y="505.8" width="300" height="150" rx="16" ry="16" fill="#111827" stroke="#f59e0b" stroke-width="3" />
+<rect x="1276.6" y="505.8" width="8" height="150" rx="4" ry="4" fill="#f59e0b"/>
+<text x="1560.6" y="529.8" text-anchor="end" font-size="13" font-weight="700" fill="#22c55e">✓ WORKING</text>
+<text x="1302.6" y="559.8" font-size="21" font-weight="700" fill="#f8fafc">02 · AgentCore CLI</text>
+<text x="1302.6" y="584.8" font-size="14" fill="#f59e0b" font-weight="600">Bedrock AgentCore Runtime</text>
+<circle cx="1296.6" cy="606.8" r="3" fill="#94a3b8"/>
+<text x="1312.6" y="611.8" font-size="14.5" fill="#cbd5e1">npm @aws/agentcore → generates CDK</text>
+<rect x="1271.6" y="864.2" width="310" height="150" rx="16" ry="16" fill="#111827" stroke="#8b5cf6" stroke-width="3" />
+<rect x="1271.6" y="864.2" width="8" height="150" rx="4" ry="4" fill="#8b5cf6"/>
+<text x="1565.6" y="888.2" text-anchor="end" font-size="13" font-weight="700" fill="#22c55e">✓ WORKING</text>
+<text x="1297.6" y="918.2" font-size="21" font-weight="700" fill="#f8fafc">03 · Classic Bedrock</text>
+<text x="1297.6" y="943.2" font-size="14" fill="#8b5cf6" font-weight="600">Bedrock Agents + Lambda</text>
+<circle cx="1291.6" cy="965.2" r="3" fill="#94a3b8"/>
+<text x="1307.6" y="970.2" font-size="14.5" fill="#cbd5e1">Console-built agent + action group</text>
+<rect x="1080.9" y="1114.2" width="270" height="230" rx="16" ry="16" fill="#111827" stroke="#0891b2" stroke-width="3" />
+<rect x="1080.9" y="1114.2" width="8" height="230" rx="4" ry="4" fill="#0891b2"/>
+<text x="1334.9" y="1138.2" text-anchor="end" font-size="13" font-weight="700" fill="#22c55e">✓ WORKING</text>
+<text x="1106.9" y="1168.2" font-size="21" font-weight="700" fill="#f8fafc">04 · Lambda</text>
+<text x="1106.9" y="1193.2" font-size="14" fill="#0891b2" font-weight="600">AWS Lambda</text>
+<circle cx="1100.9" cy="1215.2" r="3" fill="#94a3b8"/>
+<text x="1116.9" y="1220.2" font-size="14.5" fill="#cbd5e1">zip-deploy (boto3)</text>
+<circle cx="1100.9" cy="1240.2" r="3" fill="#94a3b8"/>
+<text x="1116.9" y="1245.2" font-size="14.5" fill="#cbd5e1">CDK</text>
+<circle cx="1100.9" cy="1265.2" r="3" fill="#94a3b8"/>
+<text x="1116.9" y="1270.2" font-size="14.5" fill="#cbd5e1">Terraform</text>
+<circle cx="1100.9" cy="1290.2" r="3" fill="#94a3b8"/>
+<text x="1116.9" y="1295.2" font-size="14.5" fill="#cbd5e1">CloudFormation</text>
+<rect x="730.0" y="1265.0" width="290" height="150" rx="16" ry="16" fill="#111827" stroke="#3b82f6" stroke-width="3" />
+<rect x="730.0" y="1265.0" width="8" height="150" rx="4" ry="4" fill="#3b82f6"/>
+<text x="1004.0" y="1289.0" text-anchor="end" font-size="13" font-weight="700" fill="#22c55e">✓ WORKING</text>
+<text x="756.0" y="1319.0" font-size="21" font-weight="700" fill="#f8fafc">05 · EC2</text>
+<text x="756.0" y="1344.0" font-size="14" fill="#3b82f6" font-weight="600">Raw virtual machine</text>
+<circle cx="750.0" cy="1366.0" r="3" fill="#94a3b8"/>
+<text x="766.0" y="1371.0" font-size="14.5" fill="#cbd5e1">Terraform + systemd + cloud-init</text>
+<rect x="394.1" y="1154.2" width="280" height="150" rx="16" ry="16" fill="#111827" stroke="#0ea5e9" stroke-width="3" />
+<rect x="394.1" y="1154.2" width="8" height="150" rx="4" ry="4" fill="#0ea5e9"/>
+<text x="658.1" y="1178.2" text-anchor="end" font-size="13" font-weight="700" fill="#22c55e">✓ WORKING</text>
+<text x="420.1" y="1208.2" font-size="21" font-weight="700" fill="#f8fafc">06 · ECS Fargate</text>
+<text x="420.1" y="1233.2" font-size="14" fill="#0ea5e9" font-weight="600">Containers + Load Balancer</text>
+<circle cx="414.1" cy="1255.2" r="3" fill="#94a3b8"/>
+<text x="430.1" y="1260.2" font-size="14.5" fill="#cbd5e1">CDK</text>
+<rect x="188.4" y="864.2" width="270" height="150" rx="16" ry="16" fill="#111827" stroke="#10b981" stroke-width="3" />
+<rect x="188.4" y="864.2" width="8" height="150" rx="4" ry="4" fill="#10b981"/>
+<text x="442.4" y="888.2" text-anchor="end" font-size="13" font-weight="700" fill="#22c55e">✓ WORKING</text>
+<text x="214.4" y="918.2" font-size="21" font-weight="700" fill="#f8fafc">07 · App Runner</text>
+<text x="214.4" y="943.2" font-size="14" fill="#10b981" font-weight="600">Fully managed containers</text>
+<circle cx="208.4" cy="965.2" r="3" fill="#94a3b8"/>
+<text x="224.4" y="970.2" font-size="14.5" fill="#cbd5e1">CloudFormation</text>
+<rect x="188.4" y="505.8" width="270" height="150" rx="16" ry="16" fill="#111827" stroke="#f43f5e" stroke-width="3" stroke-dasharray="8,6" />
+<rect x="188.4" y="505.8" width="8" height="150" rx="4" ry="4" fill="#f43f5e"/>
+<text x="442.4" y="529.8" text-anchor="end" font-size="13" font-weight="700" fill="#f43f5e">PAUSED</text>
+<text x="214.4" y="559.8" font-size="21" font-weight="700" fill="#f8fafc">08 · EKS</text>
+<text x="214.4" y="584.8" font-size="14" fill="#f43f5e" font-weight="600">Kubernetes + IRSA</text>
+<circle cx="208.4" cy="606.8" r="3" fill="#94a3b8"/>
+<text x="224.4" y="611.8" font-size="14.5" fill="#cbd5e1">eksctl (paused mid-run)</text>
+<rect x="384.1" y="195.8" width="300" height="190" rx="16" ry="16" fill="#111827" stroke="#6366f1" stroke-width="3" />
+<rect x="384.1" y="195.8" width="8" height="190" rx="4" ry="4" fill="#6366f1"/>
+<text x="668.1" y="219.8" text-anchor="end" font-size="13" font-weight="700" fill="#22c55e">✓ WORKING</text>
+<text x="410.1" y="249.8" font-size="21" font-weight="700" fill="#f8fafc">09 · CI/CD</text>
+<text x="410.1" y="274.8" font-size="14" fill="#6366f1" font-weight="600">Wraps 01 / boto3-direct</text>
+<circle cx="404.1" cy="296.8" r="3" fill="#94a3b8"/>
+<text x="420.1" y="301.8" font-size="14.5" fill="#cbd5e1">GitHub Actions (OIDC)</text>
+<circle cx="404.1" cy="321.8" r="3" fill="#94a3b8"/>
+<text x="420.1" y="326.8" font-size="14.5" fill="#cbd5e1">CodePipeline + CodeBuild</text>
+<rect x="415.0" y="1506" width="920" height="58" rx="29" ry="29" fill="#1e293b" stroke="#eab308" stroke-width="2.5" stroke-dasharray="6,6"/>
+<text x="465.0" y="1541" font-size="15"><tspan font-weight="700" fill="#eab308">iam/ </tspan><tspan fill="#e2e8f0">— every real IAM policy &amp; permission fix from every module above, exported live</tspan></text>
+<circle cx="70" cy="1610" r="6" fill="#22c55e"/>
+<text x="86" y="1615" font-size="14" fill="#cbd5e1">Working end to end</text>
+<circle cx="280" cy="1610" r="6" fill="#f43f5e"/>
+<text x="296" y="1615" font-size="14" fill="#cbd5e1">Paused / in progress</text>
+</svg>
