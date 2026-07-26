@@ -1,0 +1,256 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  AWS-native CI/CD variant of 09-cicd-github-actions -- same idea (push to main redeploys the
+  live agent), same deploy target (01-agentcore-runtime/boto3-direct), but using CodePipeline +
+  CodeBuild instead of GitHub Actions. Exam-relevant (CodePipeline/CodeBuild are explicitly named
+  on the AWS Certified Generative AI Developer - Professional exam guide; GitHub Actions is not).
+
+Parameters:
+  GitHubOwner:
+    Type: String
+    Default: vimal-dharmalingam
+  GitHubRepo:
+    Type: String
+    Default: bedrock-agentcore-production-playbook
+  GitHubBranch:
+    Type: String
+    Default: main
+
+Resources:
+  # Created in PENDING status by CloudFormation -- AWS does not allow the GitHub OAuth handshake
+  # itself to be scripted. After this stack deploys, you must go to the console (CodePipeline ->
+  # Settings -> Connections, or Developer Tools -> Connections) and manually click "Update pending
+  # connection" to authorize it against your GitHub account. Nothing in the pipeline can run until
+  # this one-time manual step is done.
+  GitHubConnection:
+    Type: AWS::CodeStarConnections::Connection
+    Properties:
+      ConnectionName: CalcAgentGitHubConnection
+      ProviderType: GitHub
+
+  ArtifactBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "calc-agent-codepipeline-artifacts-${AWS::AccountId}"
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  # Assumed by codebuild.amazonaws.com -- needs roughly the same permission set
+  # GitHubActionsAgentCoreDeployRole needed in 09-cicd-github-actions: ECR, the nested CodeBuild
+  # project the starter toolkit creates, bedrock-agentcore runtime + endpoint + workload identity
+  # actions, and IAM role creation/PassRole scoped to *AgentCore* role names.
+  CodeBuildServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: CalcAgentCodeBuildServiceRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: CalcAgentCodeBuildPermissions
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: LogsAccess
+                Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "*"
+              - Sid: ArtifactBucketAccess
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:GetBucketVersioning
+                Resource:
+                  - !Sub "${ArtifactBucket.Arn}"
+                  - !Sub "${ArtifactBucket.Arn}/*"
+              - Sid: EcrForAgentImage
+                Effect: Allow
+                Action:
+                  - ecr:CreateRepository
+                  - ecr:DescribeRepositories
+                  - ecr:GetAuthorizationToken
+                  - ecr:BatchGetImage
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:PutImage
+                  - ecr:InitiateLayerUpload
+                  - ecr:UploadLayerPart
+                  - ecr:CompleteLayerUpload
+                  - ecr:SetRepositoryPolicy
+                  - ecr:ListTagsForResource
+                  - ecr:TagResource
+                Resource: "*"
+              - Sid: NestedCodeBuildForImageBuild
+                Effect: Allow
+                Action:
+                  - codebuild:CreateProject
+                  - codebuild:UpdateProject
+                  - codebuild:BatchGetProjects
+                  - codebuild:StartBuild
+                  - codebuild:BatchGetBuilds
+                Resource: "*"
+              - Sid: S3ForNestedCodeBuildSourceUpload
+                Effect: Allow
+                Action:
+                  - s3:CreateBucket
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:ListBucket
+                  - s3:PutBucketPolicy
+                  - s3:PutEncryptionConfiguration
+                  - s3:PutBucketPublicAccessBlock
+                Resource:
+                  - "arn:aws:s3:::bedrock-agentcore-*"
+                  - "arn:aws:s3:::bedrock-agentcore-*/*"
+              - Sid: IamForAutoCreatedExecutionRole
+                Effect: Allow
+                Action:
+                  - iam:CreateRole
+                  - iam:GetRole
+                  - iam:PutRolePolicy
+                  - iam:AttachRolePolicy
+                  - iam:PassRole
+                Resource: "arn:aws:iam::*:role/*AgentCore*"
+              - Sid: BedrockAgentCoreRuntime
+                Effect: Allow
+                Action:
+                  - bedrock-agentcore:CreateAgentRuntime
+                  - bedrock-agentcore:UpdateAgentRuntime
+                  - bedrock-agentcore:GetAgentRuntime
+                  - bedrock-agentcore:ListAgentRuntimes
+                  - bedrock-agentcore:DeleteAgentRuntime
+                  - bedrock-agentcore:InvokeAgentRuntime
+                  - bedrock-agentcore:CreateAgentRuntimeEndpoint
+                  - bedrock-agentcore:UpdateAgentRuntimeEndpoint
+                  - bedrock-agentcore:GetAgentRuntimeEndpoint
+                  - bedrock-agentcore:DeleteAgentRuntimeEndpoint
+                  - bedrock-agentcore:ListAgentRuntimeEndpoints
+                  - bedrock-agentcore:TagResource
+                  - bedrock-agentcore:ListTagsForResource
+                Resource: "*"
+              - Sid: BedrockAgentCoreWorkloadIdentity
+                Effect: Allow
+                Action:
+                  - bedrock-agentcore:CreateWorkloadIdentity
+                  - bedrock-agentcore:GetWorkloadIdentity
+                  - bedrock-agentcore:UpdateWorkloadIdentity
+                  - bedrock-agentcore:DeleteWorkloadIdentity
+                  - bedrock-agentcore:ListWorkloadIdentities
+                Resource: "*"
+              - Sid: StsIdentity
+                Effect: Allow
+                Action: sts:GetCallerIdentity
+                Resource: "*"
+
+  # Assumed by codepipeline.amazonaws.com -- just needs to move artifacts through S3, trigger
+  # CodeBuild, and use the GitHub connection. It does NOT need any of CodeBuildServiceRole's
+  # AWS-resource-creation permissions -- CodePipeline itself never touches ECR/bedrock-agentcore
+  # directly, it only orchestrates.
+  CodePipelineServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: CalcAgentCodePipelineServiceRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codepipeline.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: CalcAgentCodePipelinePermissions
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: ArtifactBucketAccess
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:GetBucketVersioning
+                Resource:
+                  - !Sub "${ArtifactBucket.Arn}"
+                  - !Sub "${ArtifactBucket.Arn}/*"
+              - Sid: UseGitHubConnection
+                Effect: Allow
+                Action: codestar-connections:UseConnection
+                Resource: !Ref GitHubConnection
+              - Sid: TriggerCodeBuild
+                Effect: Allow
+                Action:
+                  - codebuild:StartBuild
+                  - codebuild:BatchGetBuilds
+                Resource: !GetAtt CodeBuildProject.Arn
+
+  CodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: calc-agent-deploy-build
+      ServiceRole: !GetAtt CodeBuildServiceRole.Arn
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: 09-cicd-codepipeline/buildspec.yml
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:5.0
+      Artifacts:
+        Type: CODEPIPELINE
+
+  Pipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      Name: CalcAgentDeployPipeline
+      RoleArn: !GetAtt CodePipelineServiceRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref ArtifactBucket
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: GitHubSource
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Provider: CodeStarSourceConnection
+                Version: "1"
+              Configuration:
+                ConnectionArn: !Ref GitHubConnection
+                FullRepositoryId: !Sub "${GitHubOwner}/${GitHubRepo}"
+                BranchName: !Ref GitHubBranch
+              OutputArtifacts:
+                - Name: SourceOutput
+        - Name: BuildAndDeploy
+          Actions:
+            - Name: BuildAndDeploy
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: "1"
+              Configuration:
+                ProjectName: !Ref CodeBuildProject
+              InputArtifacts:
+                - Name: SourceOutput
+
+Outputs:
+  ConnectionArn:
+    Description: >
+      Must be manually authorized in the console (CodePipeline > Settings > Connections) before
+      the pipeline can run for the first time.
+    Value: !Ref GitHubConnection
+  PipelineName:
+    Value: !Ref Pipeline

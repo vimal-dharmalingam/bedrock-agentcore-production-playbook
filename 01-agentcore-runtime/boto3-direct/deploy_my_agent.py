@@ -47,6 +47,13 @@ def deploy():
         with open(github_output, "a") as fh:
             fh.write(f"agent_arn={result.agent_arn}\n")
 
+    # Also always write it to a plain local file. This is what 09-cicd-codepipeline's
+    # buildspec.yml reads (CodeBuild has no equivalent of GITHUB_OUTPUT) -- keeping this
+    # write unconditional means the same deploy script works unmodified under either
+    # CI/CD tool, rather than needing a tool-specific branch of logic.
+    with open("agent_arn.txt", "w") as fh:
+        fh.write(result.agent_arn)
+
     return result
 
 if __name__ == "__main__":

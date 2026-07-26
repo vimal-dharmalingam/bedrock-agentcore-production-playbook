@@ -1,0 +1,92 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "CloudFormationStackManagement",
+            "Effect": "Allow",
+            "Action": [
+                "cloudformation:CreateStack",
+                "cloudformation:UpdateStack",
+                "cloudformation:DeleteStack",
+                "cloudformation:DescribeStacks",
+                "cloudformation:DescribeStackEvents",
+                "cloudformation:DescribeStackResources",
+                "cloudformation:GetTemplateSummary",
+                "cloudformation:CreateChangeSet",
+                "cloudformation:DescribeChangeSet",
+                "cloudformation:ExecuteChangeSet",
+                "cloudformation:DeleteChangeSet",
+                "cloudformation:ListStackResources"
+            ],
+            "Resource": "arn:aws:cloudformation:us-east-1:486517829337:stack/CalcAgent*/*"
+        },
+        {
+            "Sid": "CodePipelineManagement",
+            "Effect": "Allow",
+            "Action": [
+                "codepipeline:CreatePipeline",
+                "codepipeline:GetPipeline",
+                "codepipeline:GetPipelineState",
+                "codepipeline:UpdatePipeline",
+                "codepipeline:DeletePipeline",
+                "codepipeline:TagResource",
+                "codepipeline:ListTagsForResource",
+                "codepipeline:StartPipelineExecution",
+                "codepipeline:GetPipelineExecution",
+                "codepipeline:ListPipelineExecutions"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "CodeBuildProjectManagement",
+            "Effect": "Allow",
+            "Action": [
+                "codebuild:CreateProject",
+                "codebuild:UpdateProject",
+                "codebuild:BatchGetProjects",
+                "codebuild:DeleteProject"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "CodeStarConnectionManagement",
+            "Effect": "Allow",
+            "Action": [
+                "codestar-connections:CreateConnection",
+                "codestar-connections:GetConnection",
+                "codestar-connections:DeleteConnection",
+                "codestar-connections:TagResource",
+                "codestar-connections:ListTagsForResource",
+                "codestar-connections:PassConnection"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "ArtifactBucketManagement",
+            "Effect": "Allow",
+            "Action": [
+                "s3:CreateBucket",
+                "s3:DeleteBucket",
+                "s3:PutBucketVersioning",
+                "s3:PutBucketPublicAccessBlock",
+                "s3:PutEncryptionConfiguration",
+                "s3:GetBucketPolicy",
+                "s3:ListBucket"
+            ],
+            "Resource": "arn:aws:s3:::calc-agent-codepipeline-artifacts-*"
+        },
+        {
+            "Sid": "IamForPipelineServiceRoles",
+            "Effect": "Allow",
+            "Action": [
+                "iam:CreateRole",
+                "iam:GetRole",
+                "iam:PutRolePolicy",
+                "iam:DeleteRolePolicy",
+                "iam:DeleteRole",
+                "iam:PassRole"
+            ],
+            "Resource": "arn:aws:iam::486517829337:role/CalcAgent*"
+        }
+    ]
+}

@@ -12,6 +12,7 @@ cdk.out/
 
 # AgentCore local state (contains account-specific values, not secrets, but noisy in diffs)
 .bedrock_agentcore/
+agent_arn.txt
 
 # Env / secrets
 .env

@@ -1,0 +1,34 @@
+version: 0.2
+
+# Runs inside AWS CodeBuild, triggered by CodePipeline's Build stage. Note this project does
+# NOT build a Docker image itself (no privileged/Docker-in-Docker mode needed) -- it just runs
+# the same deploy_my_agent.py you'd run by hand, and that script's Runtime.launch() spins up a
+# SEPARATE, nested CodeBuild project internally to build the actual ARM64 container image.
+# This is CodeBuild triggering CodeBuild, one level removed.
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.11
+    commands:
+      - cd 01-agentcore-runtime/boto3-direct
+      - pip install -r requirements.txt
+
+  build:
+    commands:
+      - cd 01-agentcore-runtime/boto3-direct
+      - python deploy_my_agent.py
+
+  post_build:
+    commands:
+      - cd 01-agentcore-runtime/boto3-direct
+      - export AGENT_ARN=$(cat agent_arn.txt)
+      - echo "Smoke testing $AGENT_ARN"
+      - >
+        python -c "
+        from invoke_agent import invoke_agent
+        import os
+        result, _ = invoke_agent(os.environ['AGENT_ARN'], 'What is 25 * 4?')
+        print('Smoke test response:', result)
+        assert result is not None, 'Agent did not return a response'
+        "
