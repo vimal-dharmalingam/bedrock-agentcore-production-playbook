@@ -1,0 +1,50 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "CloudFormationStackManagement",
+            "Effect": "Allow",
+            "Action": [
+                "cloudformation:CreateStack",
+                "cloudformation:UpdateStack",
+                "cloudformation:DeleteStack",
+                "cloudformation:DescribeStacks",
+                "cloudformation:DescribeStackEvents",
+                "cloudformation:DescribeStackResources",
+                "cloudformation:GetTemplateSummary",
+                "cloudformation:CreateChangeSet",
+                "cloudformation:DescribeChangeSet",
+                "cloudformation:ExecuteChangeSet",
+                "cloudformation:DeleteChangeSet",
+                "cloudformation:ListStackResources"
+            ],
+            "Resource": "arn:aws:cloudformation:us-east-1:486517829337:stack/CalcAgent*/*"
+        },
+        {
+            "Sid": "AppRunnerServiceManagement",
+            "Effect": "Allow",
+            "Action": [
+                "apprunner:CreateService",
+                "apprunner:DescribeService",
+                "apprunner:DeleteService",
+                "apprunner:UpdateService",
+                "apprunner:ListServices",
+                "apprunner:ListOperations",
+                "apprunner:TagResource",
+                "apprunner:ListTagsForResource"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "AppRunnerServiceLinkedRole",
+            "Effect": "Allow",
+            "Action": "iam:CreateServiceLinkedRole",
+            "Resource": "arn:aws:iam::486517829337:role/aws-service-role/apprunner.amazonaws.com/AWSServiceRoleForAppRunner",
+            "Condition": {
+                "StringEquals": {
+                    "iam:AWSServiceName": "apprunner.amazonaws.com"
+                }
+            }
+        }
+    ]
+}

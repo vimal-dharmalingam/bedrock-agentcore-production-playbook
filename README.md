@@ -4,10 +4,10 @@ One simple calculator agent (built with the [Strands Agents](https://strandsagen
 deployed to AWS the same way a production team would evaluate deployment options: side by side,
 via every mechanism available, so the tradeoffs are directly comparable rather than theoretical.
 
-Built while learning Amazon Bedrock AgentCore in depth — both as a hands-on portfolio (I'm
-currently a GenAI Lead at an investment firm in London, moving toward roles with deeper
-production AI-infra ownership) and as study material for the AWS Certified Generative AI
-Developer – Professional exam.
+Built while learning Amazon Bedrock AgentCore in depth, as a hands-on comparison of deployment
+mechanisms rather than a single "getting started" walkthrough. Where relevant, module READMEs
+also note how a given service maps to the AWS Certified Generative AI Developer – Professional
+exam guide, as a technical cross-reference rather than the point of the repo.
 
 ## What's here
 

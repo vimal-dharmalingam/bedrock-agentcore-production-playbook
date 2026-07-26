@@ -1,0 +1,48 @@
+# Replace <ACCOUNT_ID> in the image field before applying (build_and_push.py prints the exact
+# URI to paste). serviceAccountName ties this pod to the IRSA role created in README step 4 --
+# without it, boto3 falls back to the node's own instance role, which deliberately has no
+# Bedrock permissions (see cluster.yaml's comment on why).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: calc-agent
+  labels:
+    app: calc-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: calc-agent
+  template:
+    metadata:
+      labels:
+        app: calc-agent
+    spec:
+      serviceAccountName: calc-agent-sa
+      containers:
+        - name: calc-agent
+          image: <ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/bedrock-agentcore-calc-agent-eks:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: AWS_REGION
+              value: us-east-1
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 20

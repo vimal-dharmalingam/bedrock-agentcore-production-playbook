@@ -2,7 +2,7 @@
 
 The calculator agent hosted on a raw EC2 instance -- the first compute target in this repo with
 no managed invoke API in front of it. Single method per the pacing decision (breadth across
-`05`-`09` matters more than exhaustive depth on any one target with the year-end deadline).
+`05`-`09` matters more than exhaustive depth on any one target).
 
 ## How this differs from everything before it
 

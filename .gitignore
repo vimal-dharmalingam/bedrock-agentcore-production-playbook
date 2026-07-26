@@ -43,6 +43,11 @@ override.tf.json
 *_override.tf
 *_override.tf.json
 
+# Debug artifacts (ad hoc CloudWatch log dumps fetched while diagnosing a build failure --
+# regenerable via `aws logs get-log-events`, never meant to be committed)
+build_log.txt
+build_log.json
+
 # OS
 .DS_Store
 Thumbs.db

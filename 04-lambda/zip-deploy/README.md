@@ -49,6 +49,6 @@ naming convention going forward, useful for `05` through `09` too.
   extremely well-trodden territory (day-one AWS tutorial material), unlike AgentCore Runtime's
   console which was genuinely novel and surfaced 4 new IAM gaps. The "navigate a console and
   debug what it needs" skill is already proven on the harder case.
-- Given the end-of-year job search deadline, `04` onward will get 1-2 solid methods each
-  (prove it works + one IaC tool) rather than the full 8-method depth `01-agentcore-runtime` got
+- Per the pacing decision, `04` onward will get 1-2 solid methods each (prove it works + one IaC
+  tool) rather than the full 8-method depth `01-agentcore-runtime` got
   -- breadth across compute targets matters more than exhaustive depth on any one now.

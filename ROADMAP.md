@@ -1,27 +1,20 @@
 # Agentcore2026 — Roadmap
 
 ## Purpose
-Four goals, tracked together (as of the goals-clarification session):
-1. **Portfolio for job search** — currently GenAI Lead at Aviva (London), building a public
-   GitHub repo demonstrating full production-level agent deployment skills to support a move
-   to a new role.
-2. **Job search deadline** — explicit target: land a new role before end of this year. This
-   makes breadth-and-momentum matter more than exhaustive depth on any single module.
-3. **AWS AI certification exam prep** — hands-on practice doubles as study material. Where
-   relevant, note exam-relevant concepts (service architecture, IAM permission models, managed
-   vs. self-managed tradeoffs) in module READMEs, not just "it worked" logs.
-4. **Direct work relevance** — Aviva is about to start using AgentCore internally, so this
-   learning has immediate on-the-job payoff, not just interview/exam value.
-5. **Personal AgentCore project (separate initiative, not yet started)** — a customized personal
-   assistant web app, connected to phone location, stay history, calendar, Gmail, a food-tracking
-   history, custom news, Google Drive, with voice capability. Genuinely different in kind from
-   modules 1-9 below (real tool/API integrations and an actual useful agent, vs. deployment-
-   mechanism comparisons using one trivial calculator agent) — likely a stronger portfolio
-   centerpiece than the deployment-comparison repo once built, and maps directly to exam Task 2.1
-   ("Implement agentic AI solutions and tool integrations"). Scope/sequencing/repo location TBD.
+A hands-on comparison of every practical way to deploy an agentic AI application on AWS, using
+one deliberately simple calculator agent (Strands Agents framework) as the constant across every
+mechanism, so the tradeoffs between deployment paths are directly comparable rather than
+theoretical — CLI automation vs. raw boto3, container images vs. code-zip packaging, imperative
+API calls vs. declarative Infrastructure-as-Code, and GitHub Actions vs. AWS-native CI/CD.
 
-Single running example throughout modules 1-9: a simple calculator agent (Strands Agents
-framework), redeployed via every mechanism below so the differences are directly comparable.
+Each module documents the exact commands to reproduce it from scratch, plus the real errors hit
+along the way and how they were fixed — IAM permission gaps, service-specific quirks, and
+platform gotchas. Where relevant, module READMEs also note how a given service maps to the
+official AWS Certified Generative AI Developer – Professional exam guide (see "Exam alignment"
+below) as an additional technical cross-reference, not the primary point of the repo.
+
+Single running example throughout modules 00-09: a simple calculator agent, redeployed via every
+mechanism below so the differences are directly comparable.
 
 ## Folder structure
 
@@ -98,9 +91,9 @@ Agentcore2026/
       (no Docker/arm64), not just 1-2. `cloudformation/` surfaced a naming-driven gap (stack
       name didn't match an already-granted `CalcAgent*` pattern) fixed by renaming the stack,
       not by touching IAM — kept the account under the 10-managed-policy ceiling.
-      **Pacing decision (end-of-year deadline):** `05` onward gets 1-2 solid methods per
-      compute target, not the full 8-method depth `01-agentcore-runtime` got — breadth across
-      `05`-`09` matters more now than exhaustive depth on any single target.
+      **Pacing decision:** `05` onward gets 1-2 solid methods per compute target, not the full
+      8-method depth `01-agentcore-runtime` got — breadth across `05`-`09` matters more at this
+      stage than exhaustive depth on any single target.
 - [x] `05-ec2` — **COMPLETE. Terraform method deployed, invoked, and documented** (single method,
       per the pacing decision — first compute target with no managed invoke API, so Terraform
       does genuine IaaS provisioning: AMI lookup, security group, IAM instance profile, and a
@@ -217,7 +210,31 @@ Agentcore2026/
       reusable lessons (policy/version caps, CloudFormation running under the caller's own
       credentials, first-resource-of-a-type bootstrap permissions, AWS-managed policies counting
       toward the same attachment cap as customer-managed ones). See `iam/README.md`.
-- [ ] `08-eks` — not started.
+- [ ] `08-eks` — **PAUSED (deprioritized).** Scaffolding is in place but not run end to end —
+      eksctl's cluster-create turnaround (15-20 min) and permission surface made it slower going
+      than the pacing budget for the last module allows; parked in favor of higher-value items
+      (Jenkins, README overhaul, Medium articles) with the option to come back later. First real
+      gap already hit and documented: `eks:DescribeClusterVersions` AccessDenied on the very
+      first (read-only, pre-creation) API call eksctl makes — missing from the original draft
+      policy, now fixed in `08-eks/iam/eks-cloudformation-additions-DRAFT.json`, but the
+      `create-policy-version` merge was never confirmed applied before pausing. Everything below
+      describes the scaffolding as originally planned. Chosen tool: eksctl (a different IaC "flavor" than
+      the Terraform/CDK/CloudFormation already used elsewhere — a domain-specific CLI that
+      generates and runs its own CloudFormation stacks underneath, inheriting the same
+      "runs under the caller's own credentials" behavior already seen in `07-app-runner` and
+      `09-cicd-codepipeline`). Same calculator agent container as `06-ecs-fargate`, this time
+      behind a `Service type=LoadBalancer` on a small managed node group. Introduces IRSA (IAM
+      Roles for Service Accounts) — EKS's own answer to "how does running code get AWS
+      credentials," distinct from every prior compute target's approach (Lambda execution role,
+      EC2 instance profile, ECS task role, App Runner instance role): a Kubernetes
+      `ServiceAccount` is trusted by an IAM role via the cluster's own OIDC provider, so only the
+      pod (not the whole node) gets `bedrock:InvokeModel` access. Files, cluster.yaml, k8s
+      manifests, and a DRAFT IAM policy addition are all written — see `08-eks/README.md` for
+      the full plan, anticipated IAM gaps (widest permission surface in the repo so far: `eks:*`,
+      VPC networking, `autoscaling:*`, and three separate IAM roles/providers in one
+      `eksctl create cluster` call), and the run/teardown commands. Still pending: actually
+      running `eksctl create cluster` and fixing whatever real AccessDenied errors surface,
+      same "learn by doing" discipline as every completed module.
 
 ## Exam alignment — AWS Certified Generative AI Developer - Professional (AIP-C01)
 Confirmed against the official exam guide (docs.aws.amazon.com/aws-certification/latest/ai-professional-01/):
@@ -257,7 +274,7 @@ Bedrock Agents Classic (which entered maintenance mode July 30, 2026, see
 infrastructure. Sits conceptually between `03` (fully managed, no code) and `01`/`02` (fully
 custom code) — worth its own module once the core compute-target modules are done.
 
-## Known gotchas already hit (keep documenting — good interview + exam material)
+## Known gotchas already hit (keep documenting — real signal on service internals and IAM design)
 - Bedrock model lifecycle: old model IDs go Legacy/EOL, must track current model IDs
 - One-time Anthropic "use case details" form required per AWS account before first invoke
 - AWS Marketplace subscribe permissions needed for first-time third-party model invocation
@@ -330,5 +347,5 @@ custom code) — worth its own module once the core compute-target modules are d
 
 ## Working IAM user
 `always_learner` (account 486517829337) — deliberately narrow permissions, so every new AWS
-feature tends to surface a new permission gap. This friction is itself useful exam/interview
-material on the principle of least privilege, so it's not being "fixed" by granting admin access.
+feature tends to surface a new permission gap. This friction is a deliberate demonstration of
+least-privilege design, not something "fixed" by granting admin access.

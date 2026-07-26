@@ -1,0 +1,48 @@
+# eksctl ClusterConfig -- declarative equivalent of a long `eksctl create cluster` flag list.
+# eksctl is NOT a thin CLI wrapper: under the hood it generates and runs its OWN CloudFormation
+# stacks (named "eksctl-<name>-cluster" and "eksctl-<name>-nodegroup-<ng-name>"), which is why
+# the always_learner IAM permissions this needs look a lot like 07-app-runner's story --
+# CloudFormation executes under the caller's own credentials, not a bootstrap role, so real
+# access needs granting directly. See iam/eks-cloudformation-additions.json.
+#
+# Deliberately small/cheap: one managed node group, 1 node, t3.small, no SSH access. Tear the
+# whole cluster down (`eksctl delete cluster -f cluster.yaml`) right after testing -- the EKS
+# control plane alone is billed ~$0.10/hr regardless of whether anything is running on it.
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: calc-agent-eks
+  region: us-east-1
+  version: "1.31"
+
+# Required for IRSA (IAM Roles for Service Accounts) -- provisions an OIDC identity provider
+# for the cluster so a Kubernetes ServiceAccount can be trusted by an IAM role directly,
+# without ever putting long-lived AWS keys inside a pod or falling back to the (much broader)
+# node instance role that every pod on the node would otherwise share.
+iam:
+  withOIDC: true
+
+managedNodeGroups:
+  - name: calc-agent-ng
+    instanceType: t3.small
+    desiredCapacity: 1
+    minSize: 1
+    maxSize: 2
+    volumeSize: 20
+    privateNetworking: false
+    ssh:
+      allow: false
+    # No extra addon policies (ALB controller, autoscaler, etc.) -- the node role only needs
+    # what EKS bakes in by default (ECR pull, CNI, CloudWatch logs). Bedrock access is granted
+    # to the POD via IRSA below, deliberately NOT to the node role, so it isn't shared by every
+    # pod that ever lands on this node -- the same least-privilege instinct as everywhere else
+    # in this project, just expressed as a Kubernetes-native pattern instead of an IAM one.
+    iam:
+      withAddonPolicies:
+        imageBuilder: false
+        autoScaler: false
+        ebs: false
+        efs: false
+        albIngress: false
+        cloudWatch: true

@@ -1,0 +1,17 @@
+# type: LoadBalancer is deliberately the simplest option, same "simplest that works" instinct
+# as 07-app-runner -- it provisions a classic ELB automatically via the in-tree AWS cloud
+# provider that ships with EKS, no separate AWS Load Balancer Controller add-on install needed
+# (that controller is the more "correct" production answer for ALB/NLB + path routing, but it's
+# extra setup this module doesn't need just to prove the pod is reachable).
+apiVersion: v1
+kind: Service
+metadata:
+  name: calc-agent-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: calc-agent
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080

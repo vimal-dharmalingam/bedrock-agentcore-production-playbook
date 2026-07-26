@@ -1,0 +1,92 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Calculator agent on AWS App Runner -- the simplest compute target in this repo. Unlike
+  06-ecs-fargate, there is no cluster, task definition, service, ALB, target group, or security
+  group to define: App Runner IS the load balancer, the compute, and the scaling policy, all as
+  one resource. Like every other CloudFormation module here, it cannot build the image itself --
+  run build_and_push.py first.
+
+Parameters:
+  ImageIdentifier:
+    Type: String
+    Description: Full ECR image URI printed by build_and_push.py
+
+Resources:
+  # App Runner needs TWO roles, similar split to ECS's execution-role/task-role divide but with
+  # different names: the AccessRole is used by App Runner's build/deploy machinery to pull the
+  # image from ECR (equivalent to ECS's execution role). The InstanceRole is used by the running
+  # container's own AWS SDK calls -- bedrock:InvokeModel -- equivalent to ECS's task role.
+  AccessRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: CalcAgentAppRunnerAccessRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: build.apprunner.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSAppRunnerServicePolicyForECRAccess
+
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: CalcAgentAppRunnerInstanceRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: tasks.apprunner.amazonaws.com
+            Action: sts:AssumeRole
+
+  InstanceRolePolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: CalcAgentAppRunnerInstancePolicy
+      Roles:
+        - !Ref InstanceRole
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: BedrockModelInvocation
+            Effect: Allow
+            Action:
+              - bedrock:InvokeModel
+              - bedrock:InvokeModelWithResponseStream
+            Resource:
+              - "arn:aws:bedrock:*::foundation-model/*"
+              - !Sub "arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:*"
+
+  CalcAgentService:
+    Type: AWS::AppRunner::Service
+    Properties:
+      ServiceName: calc-agent-app-runner
+      SourceConfiguration:
+        AutoDeploymentsEnabled: false
+        AuthenticationConfiguration:
+          AccessRoleArn: !GetAtt AccessRole.Arn
+        ImageRepository:
+          ImageIdentifier: !Ref ImageIdentifier
+          ImageRepositoryType: ECR
+          ImageConfiguration:
+            Port: "8080"
+      InstanceConfiguration:
+        Cpu: "0.25 vCPU"
+        Memory: "0.5 GB"
+        InstanceRoleArn: !GetAtt InstanceRole.Arn
+      HealthCheckConfiguration:
+        Protocol: HTTP
+        Path: /health
+        Interval: 10
+        Timeout: 5
+        HealthyThreshold: 1
+        UnhealthyThreshold: 5
+
+Outputs:
+  ServiceUrl:
+    Value: !GetAtt CalcAgentService.ServiceUrl
+  ServiceArn:
+    Value: !Ref CalcAgentService
