@@ -70,7 +70,15 @@
                 "bedrock-agentcore:UpdateAgentRuntime",
                 "bedrock-agentcore:GetAgentRuntime",
                 "bedrock-agentcore:ListAgentRuntimes",
-                "bedrock-agentcore:InvokeAgentRuntime"
+                "bedrock-agentcore:DeleteAgentRuntime",
+                "bedrock-agentcore:InvokeAgentRuntime",
+                "bedrock-agentcore:CreateAgentRuntimeEndpoint",
+                "bedrock-agentcore:UpdateAgentRuntimeEndpoint",
+                "bedrock-agentcore:GetAgentRuntimeEndpoint",
+                "bedrock-agentcore:DeleteAgentRuntimeEndpoint",
+                "bedrock-agentcore:ListAgentRuntimeEndpoints",
+                "bedrock-agentcore:TagResource",
+                "bedrock-agentcore:ListTagsForResource"
             ],
             "Resource": "*"
         },
