@@ -74,6 +74,12 @@ Agentcore2026/
 
 ## Status (updated as we go)
 
+- [x] `00-local-dev` — **COMPLETE. Both submodules run and invoke confirmed working:**
+      `local-python/` (plain `python app.py`, no Docker) and `local-docker/` (same Dockerfile
+      shape reused starting in `04-lambda`/`06-ecs-fargate`/`07-app-runner`, run with
+      `docker run` + AWS creds mounted read-only from `~/.aws`). No AWS resources created —
+      the baseline/control case every later deploy-target module gets compared against. See
+      `00-local-dev/README.md`.
 - [x] `01-agentcore-runtime` — **COMPLETE. All 8 of 8 sub-methods done and working end to end:**
       `starter-toolkit-cli/`, `boto3-direct/`, `direct-code-zip/`, `manual-container-build/`,
       `cdk/`, `cloudformation/`, `terraform/`, `console/`. `scripts/` done. Same calculator agent
@@ -114,7 +120,69 @@ Agentcore2026/
       separate personal-assistant project (see Purpose §5), controlled by a future WhatsApp-
       triggered Lambda (start/stop). See `05-ec2/terraform/README.md` for the full gap-by-gap
       writeup.
-- [ ] `06` through `09` and `iam/` — not started.
+- [x] `06-ecs-fargate` — **COMPLETE. CDK method deployed, invoked, and documented** (single
+      method, per the pacing decision — first genuine production topology in the repo: real
+      containers, orchestrated, behind a real Application Load Balancer, not a single instance
+      or function). Fixes the exact class of pain `05-ec2` hit: the environment is a Docker
+      image built once ahead of time, not assembled live by a boot script.
+      Two distinct root causes before it worked, both real lessons: (1) `ecs.ContainerImage
+      .from_registry()` with a raw ECR URI string gave CDK no repository object to grant pull
+      access from, so the auto-created execution role had zero ECR permissions and 15 tasks
+      crash-looped identically before it was caught — fixed with `ecr.Repository
+      .from_repository_name()` + `from_ecr_repository()`, which lets CDK wire the grant
+      automatically, the same way `from_asset()` always did; (2) once tasks were crash-looping,
+      the stuck `CREATE_IN_PROGRESS` stack couldn't just be waited out or killed-and-retried —
+      without `circuitBreaker` enabled (a warning CDK prints but doesn't default on), a
+      never-stabilizing ECS deployment can take **up to 3 hours** to fail on its own, and killing
+      the local CLI doesn't stop CloudFormation working server-side. Fastest real fix: patch the
+      *already-created* execution role directly via `aws iam put-role-policy` (physical name
+      found via `aws cloudformation describe-stack-resources`, since CloudFormation truncates
+      long logical IDs), which let ECS's automatic retry succeed and the stuck resource
+      self-heal within a minute — then reconciled with one more `cdk deploy` once the real code
+      fix was in, and removed the manual patch once CDK's own grant was confirmed present.
+      Also surfaced: no VPC was specified, so CDK created a brand new one complete with two NAT
+      Gateways (~$32/month each, running regardless of traffic) — `05-ec2` deliberately used the
+      account's default VPC to avoid exactly this, worth fixing here too if this module outlives
+      the demo stage. See `06-ecs-fargate/cdk/README.md` for the full gap-by-gap writeup.
+- [x] `07-app-runner` — **COMPLETE. CloudFormation method deployed, invoked, and documented**
+      (single method, per the pacing decision). Simplest compute target so far by a wide margin:
+      one resource (`AWS::AppRunner::Service`) replaces ECS's cluster + task definition + service
+      + ALB + target group + security groups, with no VPC or NAT Gateway needed. Two IAM gaps hit,
+      both fixed by extending `AgentCoreCloudFormationDeployAccess` (not a new policy, staying
+      under the 10-policy cap): (1) `apprunner:CreateService` AccessDenied — CloudFormation runs
+      App Runner API calls under the deploying principal's own credentials, not a bootstrap role,
+      so `always_learner` needed direct `apprunner:*` grants; (2) `iam:CreateServiceLinkedRole`
+      AccessDenied, surfaced only after fixing (1) — this was the account's first-ever App Runner
+      service, and App Runner needs to self-create `AWSServiceRoleForAppRunner` on first use, which
+      itself needs a one-time `iam:CreateServiceLinkedRole` grant (scoped tightly via an
+      `iam:AWSServiceName` condition). Also re-confirmed a `ROLLBACK_COMPLETE` stack must be
+      deleted (`delete-stack` + `wait stack-delete-complete`) before any retry — `deploy` against
+      one fails with `ValidationError` even once the underlying gap is fixed. See
+      `07-app-runner/cloudformation/README.md` for the full writeup.
+- [x] `09-cicd-github-actions` — **COMPLETE. GitHub Actions pipeline wrapping
+      `01-agentcore-runtime/boto3-direct`, deployed and verified end to end**: push to `main` →
+      OIDC-assumed AWS role (no stored keys in GitHub) → `Runtime.launch()` builds via CodeBuild
+      → pushes to ECR → creates/updates the AgentCore Runtime agent → smoke-test invoke proves it
+      live. First pipeline in the repo, and a genuinely different kind of AWS principal than
+      every prior module: a dedicated OIDC-federated IAM role (`GitHubActionsAgentCoreDeployRole`)
+      instead of the human `always_learner` user, scoped to one repo/branch via the trust policy's
+      `sub` condition. Real gaps hit, in order: (1) `apprunner`-style
+      `Not authorized to perform sts:AssumeRoleWithWebIdentity`, root-caused (after an initial
+      wrong guess about session tagging) by adding a temporary step that decodes the actual OIDC
+      JWT — GitHub's July 15, 2026 "immutable subject claims" rollout changed the default `sub`
+      format to `repo:OWNER@OWNER-ID/REPO@REPO-ID:ref:refs/heads/BRANCH` for any repo created
+      after that date, breaking the plain-name format most existing docs/examples still show;
+      (2) `bedrock-agentcore:CreateAgentRuntimeEndpoint` AccessDenied, since creating a runtime
+      also creates an endpoint sub-resource in the same call; (3)
+      `bedrock-agentcore:CreateWorkloadIdentity` AccessDenied, since AgentCore Runtime
+      auto-provisions a workload identity per agent; (4) `ConflictException: agent already
+      exists` — not an IAM gap, fixed by passing `auto_update_on_conflict=True` to
+      `Runtime.launch()`, which is also what makes repeat pipeline runs properly idempotent.
+      Every fix targeted the dedicated pipeline role by name only — no other principal, policy,
+      or resource in the account was touched. See `09-cicd-github-actions/README.md` for the
+      full writeup, including a noted scope-tightening opportunity (the `role/*AgentCore*`
+      wildcard grant is broader than strictly necessary).
+- [ ] `08-eks`, `iam/` — not started.
 
 ## Exam alignment — AWS Certified Generative AI Developer - Professional (AIP-C01)
 Confirmed against the official exam guide (docs.aws.amazon.com/aws-certification/latest/ai-professional-01/):
@@ -193,6 +261,37 @@ custom code) — worth its own module once the core compute-target modules are d
 - When debugging a headless EC2 instance with no SSH/SSM access, `exec > >(tee /var/log/x.log) 2>&1`
   in the boot script (not a plain `>` redirect) plus `set -x` is what makes the EC2 console's
   "Get system log" actually useful — a plain redirect sends output where the console can't see it
+- CDK's `ecs.ContainerImage.from_registry(uri_string)` and `.from_ecr_repository(repo_object)`
+  look interchangeable but aren't: only the latter gives CDK a real repository reference it can
+  call `.grantPull()` on. `from_registry()` with a raw string silently leaves the execution role
+  with zero ECR permissions — every task fails identically with `ecr:GetAuthorizationToken`
+  AccessDenied, and CDK gives no warning at synth or deploy time that the grant never happened
+- A never-stabilizing ECS deployment can take **up to 3 hours** to fail and roll back on its own
+  if `circuitBreaker` isn't enabled on the service (CDK warns about this, doesn't default it on)
+  — enable it before deploying anything experimental. Killing the local `cdk deploy` CLI process
+  does not stop CloudFormation, which keeps working server-side regardless
+- CloudFormation truncates long logical IDs when generating physical resource names (IAM roles
+  especially, due to the 64-char limit) — `aws cloudformation describe-stack-resources
+  --logical-resource-id <id>` gets the exact physical name reliably; guessing via
+  `iam list-roles` substring matching often misses due to the truncation
+- A stuck-but-recoverable deploy can sometimes be healed faster by patching the AWS resources
+  CloudFormation already created directly (e.g. `iam put-role-policy` on an execution role that
+  exists but is missing one permission) than by waiting for a timeout/rollback and starting over
+  — then reconciling the real code fix with one more deploy once unblocked, and removing the
+  manual patch once the proper grant is confirmed present
+- A CloudFormation stack in `ROLLBACK_COMPLETE` cannot be updated — `aws cloudformation deploy`
+  against one fails with a plain `ValidationError`, even after the underlying permission gap that
+  caused the rollback has been fixed. Always `delete-stack` + `wait stack-delete-complete` first,
+  then redeploy fresh
+- CloudFormation executes service-specific API calls (e.g. `apprunner:CreateService`) under the
+  *deploying principal's own credentials*, not a separate CloudFormation service role — so the
+  IAM user/role running `deploy` needs direct grants for every resource type in the template, not
+  just CDK-bootstrap-role-mediated ones
+- The *first-ever* resource of a given type in an AWS account often needs one extra one-time
+  permission beyond the resource's normal CRUD actions: creating a service-linked role
+  (`iam:CreateServiceLinkedRole`, scoped via an `iam:AWSServiceName` condition). Hit for App
+  Runner's `AWSServiceRoleForAppRunner` — the `apprunner:CreateService` grant alone wasn't enough
+  until this was added too
 
 ## Working IAM user
 `always_learner` (account 486517829337) — deliberately narrow permissions, so every new AWS

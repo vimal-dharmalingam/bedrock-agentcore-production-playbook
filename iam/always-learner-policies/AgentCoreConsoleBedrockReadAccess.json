@@ -1,0 +1,24 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "ConsoleModelListAccess",
+            "Effect": "Allow",
+            "Action": [
+                "bedrock:ListInferenceProfiles"
+            ],
+            "Resource": [
+                "arn:aws:bedrock:us-east-1:486517829337:inference-profile/*",
+                "arn:aws:bedrock:us-east-1:486517829337:application-inference-profile/*"
+            ]
+        },
+        {
+            "Sid": "ConsoleFoundationModelListAccess",
+            "Effect": "Allow",
+            "Action": [
+                "bedrock:ListFoundationModels"
+            ],
+            "Resource": "*"
+        }
+    ]
+}

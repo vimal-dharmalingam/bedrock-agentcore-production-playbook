@@ -1,0 +1,59 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "CloudFormationStackAccess",
+            "Effect": "Allow",
+            "Action": [
+                "cloudformation:CreateStack",
+                "cloudformation:UpdateStack",
+                "cloudformation:DeleteStack",
+                "cloudformation:DescribeStacks",
+                "cloudformation:DescribeStackEvents",
+                "cloudformation:DescribeStackResource",
+                "cloudformation:DescribeStackResources",
+                "cloudformation:GetTemplate",
+                "cloudformation:GetTemplateSummary",
+                "cloudformation:CreateChangeSet",
+                "cloudformation:DescribeChangeSet",
+                "cloudformation:ExecuteChangeSet",
+                "cloudformation:DeleteChangeSet",
+                "cloudformation:ListStacks",
+                "cloudformation:ListStackResources",
+                "cloudformation:TagResource"
+            ],
+            "Resource": "arn:aws:cloudformation:*:486517829337:stack/AgentCore-*/*"
+        },
+        {
+            "Sid": "CDKAssetBucketAccess",
+            "Effect": "Allow",
+            "Action": [
+                "s3:GetObject",
+                "s3:PutObject",
+                "s3:ListBucket"
+            ],
+            "Resource": [
+                "arn:aws:s3:::cdk-hnb659fds-assets-486517829337-*",
+                "arn:aws:s3:::cdk-hnb659fds-assets-486517829337-*/*"
+            ]
+        },
+        {
+            "Sid": "CDKExecRolePassRole",
+            "Effect": "Allow",
+            "Action": "iam:PassRole",
+            "Resource": "arn:aws:iam::486517829337:role/cdk-hnb659fds-cfn-exec-role-*"
+        },
+        {
+            "Sid": "CDKAssumeRoles",
+            "Effect": "Allow",
+            "Action": "sts:AssumeRole",
+            "Resource": "arn:aws:iam::486517829337:role/cdk-hnb659fds-*"
+        },
+        {
+            "Sid": "CDKBootstrapVersionRead",
+            "Effect": "Allow",
+            "Action": "ssm:GetParameter",
+            "Resource": "arn:aws:ssm:*:486517829337:parameter/cdk-bootstrap/*"
+        }
+    ]
+}

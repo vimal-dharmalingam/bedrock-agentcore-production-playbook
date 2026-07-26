@@ -49,7 +49,8 @@ OIDC providers or IAM roles, same restriction hit in every prior module)
 
 3. **Attach the permissions policy** (see `iam/github-actions-permissions-policy.json` --
    ECR, CodeBuild, a scoped S3 prefix, IAM role creation scoped to `*AgentCore*` role names,
-   `bedrock-agentcore:*AgentRuntime*`, and logs):
+   `bedrock-agentcore:*AgentRuntime*` + `*AgentRuntimeEndpoint*` + `*WorkloadIdentity*`, and
+   logs):
    ```bash
    aws iam put-role-policy \
      --role-name GitHubActionsAgentCoreDeployRole \
@@ -105,9 +106,42 @@ OIDC providers or IAM roles, same restriction hit in every prior module)
   denial message, is what found this. Fixed by updating the trust policy's `sub` condition to
   the actual `OWNER@ID/REPO@ID` string (find your own repo/owner IDs the same way -- the debug
   step above, or `gh api repos/OWNER/REPO --jq '.id, .owner.id'`).
+- **Two more IAM gaps surfaced only after OIDC auth was fixed** -- both hit on the very first
+  successful `CreateAgentRuntime` attempt, confirming the toolkit's internal API surface is wider
+  than the "obvious" actions:
+  1. `bedrock-agentcore:CreateAgentRuntimeEndpoint` AccessDenied -- creating a runtime also
+     creates/updates an "endpoint" sub-resource (`DEFAULT` qualifier) in the same call chain.
+     Fixed by adding the full `*AgentRuntimeEndpoint*` action set to the permissions policy.
+  2. `bedrock-agentcore:CreateWorkloadIdentity` AccessDenied, hit immediately after fixing (1) --
+     AgentCore Runtime auto-provisions a workload identity resource per agent. Fixed by adding a
+     dedicated `BedrockAgentCoreWorkloadIdentity` statement.
+  Both were plain permission additions to the same inline policy on `GitHubActionsAgentCoreDeployRole`
+  only -- no other role, policy, or principal in the account was touched by either fix.
+- **`ConflictException: Agent 'my_calc_agent' already exists`** -- not an IAM gap. The agent name
+  was already deployed once from local testing before this pipeline existed (see
+  `01-agentcore-runtime/boto3-direct`'s earlier manual runs). `Runtime.launch()` refuses to
+  overwrite an existing agent unless told to. Fixed in `deploy_my_agent.py` by passing
+  `auto_update_on_conflict=True` to `launch()` -- this is also what makes the pipeline properly
+  idempotent going forward: first run creates the agent, every run after updates it in place,
+  which is the actual behavior you want from a "push redeploys the live thing" pipeline.
+- **Scope check (nothing else in the account was affected):** every CloudShell command run while
+  debugging this module targeted `GitHubActionsAgentCoreDeployRole` by name specifically
+  (`create-role`, `update-assume-role-policy`, `put-role-policy`) -- `always_learner`'s own
+  policies, every other module's IAM roles, and every previously-deployed agent/resource were
+  never referenced or modified. The one deliberately broad grant is the `role/*AgentCore*`
+  wildcard for `iam:CreateRole`/`PutRolePolicy`/`AttachRolePolicy`/`PassRole` -- it's scoped to
+  role *name pattern*, not to a specific role, so in principle it could touch other AgentCore
+  execution roles created by `01-agentcore-runtime`'s other sub-methods (cdk/cloudformation/
+  terraform) if their role names also happened to contain "AgentCore". None of those roles were
+  actually referenced by any command run in this module -- the wildcard is unused capability, not
+  an actual change to anything -- but it's worth tightening to the exact
+  `AmazonBedrockAgentCoreSDKRuntime-*`/`AmazonBedrockAgentCoreSDKCodeBuild-*` role names this
+  pipeline actually creates if this repo is ever handed to someone else or used beyond a personal
+  portfolio.
 
 ## Status
 - [x] OIDC provider + IAM role created
 - [x] `AWS_ROLE_ARN` repo variable set
-- [ ] First pipeline run succeeded end to end (deploy + smoke test)
-- [x] IAM gaps (if any) documented here with real errors
+- [x] First pipeline run succeeded end to end (deploy + smoke test), manually re-verified with a
+      direct `invoke_agent.py` call against the live agent
+- [x] IAM gaps documented here with real errors
