@@ -34,25 +34,6 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      # TEMPORARY diagnostic step -- prints the actual OIDC token claims GitHub issues, so they
-      # can be compared character-for-character against the IAM role's trust policy condition.
-      # Remove once the real mismatch is found and fixed.
-      - name: Debug OIDC token claims
-        env:
-          ACTIONS_ID_TOKEN_REQUEST_URL: ${{ env.ACTIONS_ID_TOKEN_REQUEST_URL }}
-          ACTIONS_ID_TOKEN_REQUEST_TOKEN: ${{ env.ACTIONS_ID_TOKEN_REQUEST_TOKEN }}
-        run: |
-          IDTOKEN=$(curl -sS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sts.amazonaws.com" | python3 -c "import sys, json; print(json.load(sys.stdin)['value'])")
-          python3 -c "
-          import base64, json
-          token = '''$IDTOKEN'''
-          payload = token.split('.')[1]
-          padded = payload + '=' * (-len(payload) % 4)
-          claims = json.loads(base64.urlsafe_b64decode(padded))
-          print(json.dumps({k: claims.get(k) for k in ('aud', 'sub', 'repository', 'repository_owner', 'ref', 'event_name')}, indent=2))
-          "
-
       - name: Configure AWS credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:

@@ -85,16 +85,26 @@ OIDC providers or IAM roles, same restriction hit in every prior module)
   error, before anything AWS-side is even attempted.
 - `workflow_dispatch: {}` lets you re-run this by hand from the Actions tab (useful for retrying
   after an IAM fix, without needing an empty commit to re-trigger the `push` trigger).
-- **`aws-actions/configure-aws-credentials@v4` tags the assumed role session by default** (repo,
-  workflow, actor, etc. -- visible in the debug log as `N role session tags are being used`).
-  That requires the trust policy to grant `sts:TagSession` in addition to
-  `sts:AssumeRoleWithWebIdentity`. Ours only grants the latter, so every attempt failed with
-  `Not authorized to perform sts:AssumeRoleWithWebIdentity` -- a misleading error, since the
-  actual missing permission is `TagSession`, not `AssumeRoleWithWebIdentity` itself. Fixed by
-  setting `role-skip-session-tagging: true` on the action instead of widening the trust policy.
-  Root-caused by re-running the workflow with the `ACTIONS_STEP_DEBUG=true` repo secret set,
-  which prints the actual OIDC claims and session-tag count before the AssumeRole call --
-  the standard (non-debug) log only shows the generic denial, not what was actually attempted.
+- **GitHub's OIDC "immutable subject claims" rollout (July 15, 2026) broke the trust policy's
+  `sub` condition on first attempt.** Any repo created after that date issues OIDC tokens with
+  the new default `sub` format `repo:OWNER@OWNER-ID/REPO@REPO-ID:ref:refs/heads/BRANCH`
+  (numeric IDs permanently baked in, to stop a renamed/recycled repo or org name from inheriting
+  trust) instead of the older plain-name `repo:OWNER/REPO:ref:refs/heads/BRANCH` format most
+  existing docs and examples still show. Our trust policy was written with the old plain-name
+  format, so every `AssumeRoleWithWebIdentity` call failed with a generic
+  `Not authorized to perform sts:AssumeRoleWithWebIdentity` -- no hint in that error that the
+  actual problem was the `sub` string shape, not a missing permission.
+  (First guess -- session tagging needing `sts:TagSession` -- was wrong and is not the real
+  cause; ruled out by reading `aws-actions/configure-aws-credentials`'s own source, which
+  unconditionally strips session tags before the OIDC `AssumeRoleWithWebIdentity` call regardless
+  of any setting.)
+  Root-caused by adding a temporary workflow step that fetches and decodes the actual OIDC JWT
+  (via `ACTIONS_ID_TOKEN_REQUEST_URL`/`ACTIONS_ID_TOKEN_REQUEST_TOKEN`, both auto-populated when
+  `permissions: id-token: write` is set) and prints its `aud`/`sub`/`repository` claims directly
+  -- comparing the *real* token content against the trust policy, rather than guessing from the
+  denial message, is what found this. Fixed by updating the trust policy's `sub` condition to
+  the actual `OWNER@ID/REPO@ID` string (find your own repo/owner IDs the same way -- the debug
+  step above, or `gh api repos/OWNER/REPO --jq '.id, .owner.id'`).
 
 ## Status
 - [x] OIDC provider + IAM role created

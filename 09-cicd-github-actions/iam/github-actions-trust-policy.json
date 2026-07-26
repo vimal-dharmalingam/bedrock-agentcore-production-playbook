@@ -12,7 +12,7 @@
                     "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
                 },
                 "StringLike": {
-                    "token.actions.githubusercontent.com:sub": "repo:vimal-dharmalingam/bedrock-agentcore-production-playbook:ref:refs/heads/main"
+                    "token.actions.githubusercontent.com:sub": "repo:vimal-dharmalingam@45907730/bedrock-agentcore-production-playbook@1309329357:ref:refs/heads/main"
                 }
             }
         }
