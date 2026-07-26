@@ -151,7 +151,7 @@ and a nice side effect: the same smoke-test logic no longer has to be maintained
   it has no equivalent of GitHub Actions' step-output mechanism.
 
 ## Status
-- [ ] Stack deployed
-- [ ] GitHub connection authorized (console step)
-- [ ] First pipeline run succeeded end to end (deploy + smoke test)
-- [ ] IAM gaps (if any) documented above with real errors
+- [x] Stack deployed
+- [x] GitHub connection authorized (console step)
+- [x] First pipeline run succeeded end to end (deploy + smoke test)
+- [x] IAM gaps documented above with real errors

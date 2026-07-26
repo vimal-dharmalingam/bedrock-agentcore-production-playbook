@@ -182,7 +182,42 @@ Agentcore2026/
       or resource in the account was touched. See `09-cicd-github-actions/README.md` for the
       full writeup, including a noted scope-tightening opportunity (the `role/*AgentCore*`
       wildcard grant is broader than strictly necessary).
-- [ ] `08-eks`, `iam/` — not started.
+- [x] `09-cicd-codepipeline` — **COMPLETE. AWS-native CodePipeline + CodeBuild variant,
+      deployed and verified end to end**, wrapping the exact same target as the GitHub Actions
+      module (`01-agentcore-runtime/boto3-direct`) for a clean side-by-side comparison. Built
+      specifically because CodePipeline/CodeBuild are named on the AWS exam guide (Task 2.3.5)
+      while GitHub Actions isn't. Architecturally splits what GitHub Actions collapses into one
+      workflow file: CodePipeline only orchestrates (Source → Build stages, its own narrowly-
+      scoped service role that never touches ECR/bedrock-agentcore directly), CodeBuild is the
+      actual compute (its service role needs almost the identical permission set
+      `GitHubActionsAgentCoreDeployRole` needed — same `Runtime.launch()` call graph regardless
+      of which CI/CD tool drives it). Auth uses a `CodeStarConnections::Connection` instead of
+      OIDC — created via CloudFormation but left in `PENDING` status, since AWS deliberately does
+      not allow the GitHub OAuth handshake itself to be scripted; a one-time manual console click
+      is unavoidable. Three IAM gaps hit on `always_learner` (all fixed by extending
+      `AgentCoreCloudFormationDeployAccess`, same discipline as every other module):
+      `codestar-connections:PassConnection` (analogous to `iam:PassRole`, needed because
+      CloudFormation creates the pipeline under the caller's own credentials), missing
+      `codepipeline:StartPipelineExecution` (the original grant only covered pipeline
+      management, not running it), and the 5-versions-per-policy cap hit again in the process.
+      Two genuinely interesting **non-IAM** bugs surfaced too: (1) CodeBuild's working directory
+      persists across *all* phases of a build, not just within one — a buildspec with a `cd`
+      in every phase caused the second `cd` to try descending into a nested subdirectory of the
+      same name relative to where the shell already was; fixed by anchoring every `cd` to the
+      absolute `$CODEBUILD_SRC_DIR`; (2) YAML's `>` (folded) block scalar collapses newlines
+      into spaces, silently turning a multi-line inline `python -c "..."` smoke test into one
+      invalid line — GitHub Actions' equivalent worked because it used `|` (literal, preserves
+      newlines). Fixed by extracting a shared `smoke_test.py` file used by both pipelines
+      instead of relying on inline multi-line shell-quoted Python in either one. See
+      `09-cicd-codepipeline/README.md` for the full writeup.
+- [x] `iam/` — **COMPLETE.** Cross-cutting folder consolidating every permission gap hit across
+      all nine modules: exported policy JSONs (`always_learner`'s 10 managed + 1 inline policy,
+      pulled live from the account, not retyped), a narrative README mapping each policy to its
+      module/key permissions/gotcha, and a "patterns worth knowing cold" section distilling the
+      reusable lessons (policy/version caps, CloudFormation running under the caller's own
+      credentials, first-resource-of-a-type bootstrap permissions, AWS-managed policies counting
+      toward the same attachment cap as customer-managed ones). See `iam/README.md`.
+- [ ] `08-eks` — not started.
 
 ## Exam alignment — AWS Certified Generative AI Developer - Professional (AIP-C01)
 Confirmed against the official exam guide (docs.aws.amazon.com/aws-certification/latest/ai-professional-01/):
