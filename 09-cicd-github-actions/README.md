@@ -85,9 +85,19 @@ OIDC providers or IAM roles, same restriction hit in every prior module)
   error, before anything AWS-side is even attempted.
 - `workflow_dispatch: {}` lets you re-run this by hand from the Actions tab (useful for retrying
   after an IAM fix, without needing an empty commit to re-trigger the `push` trigger).
+- **`aws-actions/configure-aws-credentials@v4` tags the assumed role session by default** (repo,
+  workflow, actor, etc. -- visible in the debug log as `N role session tags are being used`).
+  That requires the trust policy to grant `sts:TagSession` in addition to
+  `sts:AssumeRoleWithWebIdentity`. Ours only grants the latter, so every attempt failed with
+  `Not authorized to perform sts:AssumeRoleWithWebIdentity` -- a misleading error, since the
+  actual missing permission is `TagSession`, not `AssumeRoleWithWebIdentity` itself. Fixed by
+  setting `role-skip-session-tagging: true` on the action instead of widening the trust policy.
+  Root-caused by re-running the workflow with the `ACTIONS_STEP_DEBUG=true` repo secret set,
+  which prints the actual OIDC claims and session-tag count before the AssumeRole call --
+  the standard (non-debug) log only shows the generic denial, not what was actually attempted.
 
 ## Status
-- [ ] OIDC provider + IAM role created
-- [ ] `AWS_ROLE_ARN` repo variable set
+- [x] OIDC provider + IAM role created
+- [x] `AWS_ROLE_ARN` repo variable set
 - [ ] First pipeline run succeeded end to end (deploy + smoke test)
-- [ ] IAM gaps (if any) documented here with real errors
+- [x] IAM gaps (if any) documented here with real errors

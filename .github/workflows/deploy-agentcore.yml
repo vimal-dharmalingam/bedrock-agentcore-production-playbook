@@ -39,6 +39,12 @@ jobs:
         with:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
           aws-region: us-east-1
+          # configure-aws-credentials tags the assumed session (repo/workflow/actor) by default,
+          # which needs sts:TagSession granted in the trust policy alongside
+          # sts:AssumeRoleWithWebIdentity. Ours only grants the latter, so skip tagging instead
+          # of widening the trust policy -- avoids AccessDenied that gets misreported against
+          # AssumeRoleWithWebIdentity even though the real gap is TagSession.
+          role-skip-session-tagging: true
 
       - name: Deploy agent
         id: deploy
