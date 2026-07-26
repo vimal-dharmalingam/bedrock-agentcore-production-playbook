@@ -1,7 +1,25 @@
 # 02 - AgentCore CLI (npm-based, CDK-backed)
 
+## At a glance
+
+| | |
+|---|---|
+| **AWS services** | Bedrock AgentCore Runtime, via a generated CDK app (real CloudFormation stack) |
+| **Tool** | `@aws/agentcore` CLI (npm), AWS's official successor to the deprecated Python starter toolkit |
+| **Status** | ✅ Working end to end |
+| **Real errors hit & fixed** | 0 new `always_learner` IAM policies (`cdk bootstrap` needed a one-time admin/root run instead) + a Windows Unicode terminal encoding bug |
+| **What's different here** | The only method using AWS's newer official CLI — generates its own CDK app you never hand-write, and supports frameworks beyond Strands (LangGraph, LangChain, Google ADK, OpenAI Agents) |
+
 Same calculator agent as `01-agentcore-runtime/`, redeployed using the newer
 `@aws/agentcore` CLI (successor to the deprecated Python starter toolkit).
+
+```mermaid
+graph LR
+    A["agentcore create<br/>(scaffolds a CDK app)"] --> B["agentcore dev<br/>(local hot-reload test)"]
+    B --> C["agentcore deploy<br/>(generated CDK → CloudFormation)"]
+    C --> D[Bedrock AgentCore Runtime]
+    D --> E[agentcore invoke]
+```
 
 Key differences from `01-agentcore-runtime/starter-toolkit-cli/`:
 - Distributed via npm, not pip

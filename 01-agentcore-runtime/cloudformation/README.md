@@ -1,10 +1,27 @@
 # cloudformation
 
+## At a glance
+
+| | |
+|---|---|
+| **AWS services** | Bedrock AgentCore Runtime, ECR, IAM |
+| **Tool** | Raw, hand-authored CloudFormation YAML (no CDK, no compiler) |
+| **Status** | ✅ Working end to end |
+| **Real errors hit & fixed** | 2 IAM gaps — `cloudformation:DescribeStacks` AccessDenied (new scoped policy), plus a role-naming mismatch anticipated and avoided before it happened |
+| **What's different here** | CloudFormation can't build Docker images — the manual `docker build`/push happens by hand *before* deploy, the clearest demonstration in the repo that "CloudFormation orchestrates, it doesn't construct" |
+
 Hand-written, raw CloudFormation template deploying the calculator agent to AgentCore Runtime.
 No compiler, no construct library -- this is the exact resource shape `cdk synth` produced in
 the `cdk/` module, written directly instead of generated. Fully self-contained: builds its own
 Docker image, pushes to its own dedicated ECR repo, no dependency on any other
 `01-agentcore-runtime` sub-method.
+
+```mermaid
+graph LR
+    A["docker build + push<br/>(manual, own ECR repo)"] --> D[Bedrock AgentCore Runtime]
+    B["aws cloudformation deploy<br/>(template.yaml)"] --> C["Execution role<br/>(hand-written policy)"]
+    B --> D
+```
 
 ## Files
 

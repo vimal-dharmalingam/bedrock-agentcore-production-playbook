@@ -1,9 +1,27 @@
 # 00-local-dev
 
+## At a glance
+
+| | |
+|---|---|
+| **AWS services** | Bedrock (`InvokeModel` only) — no deploy infrastructure at all |
+| **Tool** | Plain Python and Docker, no IaC |
+| **Status** | ✅ Working end to end (both submethods) |
+| **Real errors hit & fixed** | 0 — this is the baseline; the point is ruling out agent-code and Dockerfile problems before any deploy mechanism gets layered on top |
+| **What's different here** | The only module with zero AWS resources to create or tear down |
+
 The baseline. Same calculator agent (Strands Agents, `bedrock:InvokeModel`, one `calculator`
 tool) used everywhere else in this repo, run two ways with zero AWS deploy target involved:
 `local-python` (plain `python`, no Docker) and `local-docker` (the same Dockerfile shape reused
 starting in `04-lambda`/`06-ecs-fargate`/`07-app-runner`).
+
+```mermaid
+graph LR
+    A[Your machine] --> B["local-python:<br/>python app.py"]
+    A --> C["local-docker:<br/>docker run"]
+    B --> D[Bedrock InvokeModel]
+    C --> D
+```
 
 The point isn't the agent logic -- it's proving both "does the code run at all" and "does the
 container build and run correctly" *before* any of `01`-`09` add a deploy mechanism on top. If

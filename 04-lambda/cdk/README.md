@@ -1,9 +1,26 @@
 # 04-lambda / cdk
 
+## At a glance
+
+| | |
+|---|---|
+| **AWS services** | Lambda, IAM (via the CDK bootstrap's own execution roles) |
+| **Tool** | AWS CDK (Python), `Function` L2 construct |
+| **Status** | ✅ Working end to end |
+| **Real errors hit & fixed** | 0 new `always_learner` IAM gaps — the privileged work runs under CDK's bootstrap roles, not the calling identity |
+| **What's different here** | Confirms a repo-wide pattern: CDK deploys are consistently cheaper on IAM permissions than raw boto3 or CloudFormation, because CDK's bootstrap role absorbs the privileged calls |
+
 Same calculator agent as `zip-deploy/`, deployed via Python CDK instead of raw boto3. Much
 simpler than `01-agentcore-runtime/cdk`: no arm64 requirement, no container-vs-code-zip
 artifact choice, no chicken-and-egg ECR problem -- Lambda's `Function` L2 construct is one of
 the oldest, most mature constructs in `aws-cdk-lib`.
+
+```mermaid
+graph LR
+    A["build_lambda_asset.py<br/>(x86_64 wheels)"] --> B["cdk deploy<br/>(Function L2 construct)"]
+    B --> C[Lambda function]
+    C --> D[invoke_lambda_agent.py]
+```
 
 ## Files
 - `lambda_src/lambda_function.py`, `lambda_src/requirements.txt` -- source, tracked in git

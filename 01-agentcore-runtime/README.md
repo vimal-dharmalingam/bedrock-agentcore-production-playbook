@@ -1,8 +1,38 @@
 # 01 - AgentCore Runtime (multiple deployment mechanisms, same target)
 
+## At a glance
+
+| | |
+|---|---|
+| **AWS services** | Bedrock AgentCore Runtime (plus ECR/CodeBuild for the container-based methods) |
+| **Tool** | All 8: CLI, boto3, code-zip, manual Docker, CDK, CloudFormation, Terraform, Console |
+| **Status** | ✅ All 8 methods deployed and invoked successfully |
+| **Real errors hit & fixed** | 9+ distinct gotchas (see below) — `console/` alone surfaced 4 new IAM gaps, more than any other single method |
+| **What's different here** | The deepest single-target comparison in the repo — one AWS resource, every major way AWS lets you create it |
+
 All subfolders here deploy the exact same calculator agent to the exact same target —
 Amazon Bedrock AgentCore Runtime — using different tools. The point is to compare deployment
 mechanics directly, not to build different agents.
+
+```mermaid
+graph LR
+    Agent[my_calc_agent.py] --> M1[starter-toolkit-cli]
+    Agent --> M2[boto3-direct]
+    Agent --> M3[direct-code-zip]
+    Agent --> M4[manual-container-build]
+    Agent --> M5[cdk]
+    Agent --> M6[cloudformation]
+    Agent --> M7[terraform]
+    Agent --> M8[console]
+    M1 --> R[(Bedrock AgentCore Runtime)]
+    M2 --> R
+    M3 --> R
+    M4 --> R
+    M5 --> R
+    M6 --> R
+    M7 --> R
+    M8 --> R
+```
 
 ## Subfolders
 

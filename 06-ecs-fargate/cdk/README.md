@@ -1,8 +1,27 @@
 # 06-ecs-fargate / cdk
 
+## At a glance
+
+| | |
+|---|---|
+| **AWS services** | ECS Fargate, Application Load Balancer, ECR, IAM (execution role + task role) |
+| **Tool** | AWS CDK, `ApplicationLoadBalancedFargateService` L3 construct |
+| **Status** | ✅ Working end to end |
+| **Real errors hit & fixed** | 1 major crash-loop bug (`from_registry()` gave the execution role zero ECR permissions, 15 tasks failed identically), a 3-hour circuit-breaker timeout risk, and 1 `always_learner` read-access gap |
+| **What's different here** | The first genuine production topology in the repo — a real Application Load Balancer in front, and two separate IAM roles per task (execution role vs. task role) instead of one |
+
 The calculator agent as a real containerized, orchestrated, load-balanced service -- the first
 module in this repo that's a genuine production topology, not a single instance or function.
 Single method (CDK) per the pacing decision.
+
+```mermaid
+graph LR
+    A["build_and_push.py<br/>(docker build, amd64)"] --> B[ECR repo]
+    B --> C["cdk deploy<br/>(ApplicationLoadBalancedFargateService)"]
+    C --> D[Application Load Balancer]
+    D --> E[Fargate task]
+    E --> F[invoke_ecs_agent.py]
+```
 
 ## How this differs from everything before it
 

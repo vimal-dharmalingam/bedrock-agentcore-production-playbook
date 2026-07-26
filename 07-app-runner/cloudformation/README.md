@@ -1,7 +1,25 @@
 # 07-app-runner / cloudformation
 
+## At a glance
+
+| | |
+|---|---|
+| **AWS services** | App Runner, ECR, IAM (AccessRole + InstanceRole) |
+| **Tool** | Raw, hand-authored CloudFormation YAML |
+| **Status** | ✅ Working end to end |
+| **Real errors hit & fixed** | 2 IAM gaps — `apprunner:CreateService` AccessDenied, and `iam:CreateServiceLinkedRole` on the account's first-ever App Runner service |
+| **What's different here** | The simplest compute target in the repo by a wide margin — one resource (`AWS::AppRunner::Service`) replaces ECS's cluster, task definition, service, ALB, target group, and security groups entirely, with built-in HTTPS and no VPC/NAT Gateway to manage |
+
 The calculator agent on AWS App Runner -- the simplest compute target in this repo by a wide
 margin. Single method (raw CloudFormation) per the pacing decision.
+
+```mermaid
+graph LR
+    A["build_and_push.py<br/>(docker build, amd64)"] --> B[ECR repo]
+    B --> C["aws cloudformation deploy<br/>(AWS::AppRunner::Service)"]
+    C --> D["App Runner service<br/>(own compute, LB, HTTPS)"]
+    D --> E[invoke_apprunner_agent.py]
+```
 
 ## How this differs from everything before it
 

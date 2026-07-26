@@ -1,5 +1,15 @@
 # 08-eks
 
+## At a glance
+
+| | |
+|---|---|
+| **AWS services** | EKS, ECR, IAM (IRSA), auto-created VPC/NAT Gateway |
+| **Tool** | eksctl — a domain-specific CLI that generates and runs its own CloudFormation stacks |
+| **Status** | ⏸ Paused mid-run — scaffolded but `eksctl create cluster` not yet completed |
+| **Real errors hit & fixed** | 1 confirmed (`eks:DescribeClusterVersions` AccessDenied on eksctl's first read-only call) + 3 more anticipated and documented below, not yet hit |
+| **What's different here** | Introduces IRSA — the only pod-scoped (not node-scoped) IAM credential pattern in the repo |
+
 Kubernetes as the compute target: the same calculator agent, containerized the same way as
 `06-ecs-fargate`, this time orchestrated by a real EKS cluster instead of ECS. Last of the
 compute-target modules in the roadmap (Lambda, EC2, ECS Fargate, App Runner, EKS all covered),
@@ -28,22 +38,15 @@ worth knowing cold for an interview, since it means eksctl inherits CloudFormati
 
 ## Architecture
 
-```
-GitHub/local push (image change)
-        │
-   build_and_push.py  →  ECR repo bedrock-agentcore-calc-agent-eks
-        │
-eksctl create cluster -f cluster.yaml
-        │  (creates: VPC, 2 subnets, IGW, NAT gateway, EKS control plane,
-        │   managed node group + its own Auto Scaling group, OIDC provider)
-        ▼
-   EKS cluster "calc-agent-eks"
-        │
-eksctl create iamserviceaccount (creates IAM role + k8s ServiceAccount, IRSA-linked)
-        │
-kubectl apply -f k8s/  (Deployment + Service)
-        │
-   Service type=LoadBalancer  →  classic ELB  →  pod(s) on port 8080
+```mermaid
+graph TD
+    A[build_and_push.py] --> B["ECR repo:<br/>bedrock-agentcore-calc-agent-eks"]
+    C["eksctl create cluster<br/>(VPC, node group, OIDC provider)"] --> D["EKS cluster<br/>calc-agent-eks"]
+    E["eksctl create iamserviceaccount<br/>(IRSA role + ServiceAccount)"] --> D
+    D --> F["kubectl apply<br/>(Deployment + Service)"]
+    F --> G["Service type=LoadBalancer<br/>→ classic ELB"]
+    G --> H[Pod on port 8080]
+    B -.image URI.-> H
 ```
 
 ## The IAM pattern unique to this module: IRSA

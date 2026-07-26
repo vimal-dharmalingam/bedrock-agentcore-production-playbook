@@ -1,10 +1,31 @@
 # 09-cicd-codepipeline
 
+## At a glance
+
+| | |
+|---|---|
+| **AWS services** | CodePipeline, CodeBuild, CodeStar Connections, S3 (artifact bucket), Bedrock AgentCore Runtime, ECR |
+| **Tool** | AWS-native CodePipeline + CodeBuild, deployed via CloudFormation |
+| **Status** | ✅ Working end to end |
+| **Real errors hit & fixed** | 3 IAM gaps + 2 real non-IAM bugs — CodeBuild's working directory persisting across phases, and a YAML folded-vs-literal block scalar bug that silently flattened a multi-line Python script |
+| **What's different here** | AWS splits "orchestration" (CodePipeline) and "compute" (CodeBuild) into two separate services with two separate IAM roles, where GitHub Actions collapses both into one workflow file |
+
 The AWS-native sibling of `09-cicd-github-actions`: same idea (push to `main` redeploys the live
 agent), same deploy target (`01-agentcore-runtime/boto3-direct`, byte-for-byte unchanged), but
 orchestrated by CodePipeline + CodeBuild instead of GitHub Actions. Built specifically because
 CodePipeline and CodeBuild are named explicitly on the AWS Certified Generative AI Developer -
 Professional exam guide (Task 2.3.5) — GitHub Actions isn't an AWS service and won't appear on it.
+
+```mermaid
+graph LR
+    A[Push to main] --> B["CodeStar Connection<br/>(authorized once via console)"]
+    B --> C["CodePipeline:<br/>Source stage"]
+    C --> D["CodeBuild:<br/>install + build + post_build"]
+    D --> E["deploy_my_agent.py<br/>Runtime.launch()"]
+    E --> F["Nested CodeBuild builds image<br/>→ pushes to ECR"]
+    F --> G["AgentCore Runtime<br/>created / updated"]
+    G --> H["Smoke test invoke<br/>proves it actually works"]
+```
 
 ## How this compares to 09-cicd-github-actions
 

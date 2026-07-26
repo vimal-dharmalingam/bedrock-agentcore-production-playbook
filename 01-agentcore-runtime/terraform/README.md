@@ -1,5 +1,15 @@
 # terraform
 
+## At a glance
+
+| | |
+|---|---|
+| **AWS services** | Bedrock AgentCore Runtime, ECR, IAM |
+| **Tool** | Terraform, `hashicorp/aws`'s native resource (not the CloudFormation-backed `awscc` provider) |
+| **Status** | ✅ Working end to end |
+| **Real errors hit & fixed** | 1 IAM gap — `ecr:ListTagsForResource` AccessDenied, a background read-back call Terraform's provider makes right after creating a resource |
+| **What's different here** | A genuine chicken-and-egg problem CDK/CloudFormation didn't hit: Terraform manages the ECR repo as a real resource, so the repo must exist before the image can be pushed, but the image must exist before the runtime can reference it — solved with a two-phase `terraform apply` |
+
 Deploys the calculator agent to AgentCore Runtime via `hashicorp/aws`'s native
 `aws_bedrockagentcore_agent_runtime` resource -- confirmed via the Terraform Registry docs
 before writing any HCL, not assumed. Fully self-contained: Terraform creates its own ECR repo,
@@ -8,6 +18,13 @@ sub-method.
 
 Note: confirmed NOT in scope for the AIP-C01 exam (see top-level ROADMAP.md) -- built for the
 job-search portfolio specifically, not exam prep.
+
+```mermaid
+graph LR
+    A["terraform apply<br/>(phase 1: ECR repo only)"] --> B[docker build + push]
+    B --> C["terraform apply<br/>(phase 2: IAM + runtime)"]
+    C --> D[Bedrock AgentCore Runtime]
+```
 
 ## Files
 

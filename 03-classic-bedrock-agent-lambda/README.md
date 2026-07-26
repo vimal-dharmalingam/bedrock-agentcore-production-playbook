@@ -1,17 +1,28 @@
 # 03 - Classic Bedrock Agents + Lambda Action Group
 
+## At a glance
+
+| | |
+|---|---|
+| **AWS services** | Bedrock Agents (Classic — separate from AgentCore), Lambda |
+| **Tool** | Built manually via the AWS Console, with a boto3 automation script (`create_agent.py`) as an unrun companion |
+| **Status** | ✅ Working via console test; boto3 path (`test_agent.py`) written but not yet run |
+| **Real errors hit & fixed** | 2 real gotchas (not IAM) — Bedrock's console doesn't auto-grant Lambda invoke permission on save; a placeholder `AGENT_ID` left in a `--source-arn` succeeded silently instead of erroring |
+| **What's different here** | An entirely different, older AWS service — no Strands framework, no container, no AgentCore Runtime. AWS manages the reasoning loop; you only supply the Lambda "tool." Now in maintenance mode as of July 30, 2026 |
+
 Different architecture from `01-agentcore-runtime` and `02-agentcore-cli` — this uses
 **Amazon Bedrock Agents** (a separate, older AWS feature, not AgentCore at all). AWS manages
 the reasoning/orchestration loop; you only supply a Lambda function as the "tool" the agent
 calls out to. No Strands framework, no container, no AgentCore Runtime involved.
 
 ## Architecture
-```
-User prompt → Bedrock Agent (model + instructions)
-                  → decides it needs the calculator tool
-                  → invokes your Lambda function (the Action Group)
-                  → Lambda returns the result
-                  → Bedrock Agent replies to the user
+```mermaid
+graph LR
+    A[User prompt] --> B["Bedrock Agent<br/>(model + instructions)"]
+    B --> C["Action Group:<br/>Lambda function"]
+    C --> D[Lambda returns result]
+    D --> B
+    B --> E[Reply to user]
 ```
 
 ## Folder layout

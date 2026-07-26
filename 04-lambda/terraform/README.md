@@ -1,9 +1,26 @@
 # 04-lambda / terraform
 
+## At a glance
+
+| | |
+|---|---|
+| **AWS services** | Lambda, IAM |
+| **Tool** | Terraform, `hashicorp/aws`'s native `aws_lambda_function` resource |
+| **Status** | ✅ Working end to end |
+| **Real errors hit & fixed** | 2 gaps — a `GetFunctionCodeSigningConfig` read-back permission, and the first hit anywhere in this project of AWS's 10-managed-policy-per-user quota |
+| **What's different here** | No ECR chicken-and-egg problem like `01-agentcore-runtime/terraform` — a zip deployment just needs a local file, so one `terraform apply` does everything. Also the point where the "new policy per gap" habit stopped scaling and switched to policy *versioning* |
+
 Same calculator agent, deployed via `hashicorp/aws`'s native `aws_lambda_function` resource.
 Much simpler than `01-agentcore-runtime/terraform`: no ECR chicken-and-egg problem, since a
 Lambda zip deployment just needs a local file, not a container registry Terraform has to create
 first -- a single `terraform apply` gets everything done, not two.
+
+```mermaid
+graph LR
+    A["build_lambda_package.py<br/>(x86_64 zip)"] --> B["terraform apply<br/>(single pass)"]
+    B --> C[Lambda function]
+    C --> D[invoke_lambda_agent.py]
+```
 
 ## Files
 - `lambda_function.py` / `requirements.txt` -- same handler code as `zip-deploy` and `cdk`

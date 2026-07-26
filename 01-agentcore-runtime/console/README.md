@@ -1,10 +1,29 @@
 # console
 
+## At a glance
+
+| | |
+|---|---|
+| **AWS services** | Bedrock AgentCore Runtime, EC2 (read-only, for a VPC picker), IAM |
+| **Tool** | Pure AWS Management Console click-through — no code, CLI, or IaC at all |
+| **Status** | ✅ Working end to end |
+| **Real errors hit & fixed** | 4 IAM gaps — more than any single CLI or IaC method in this repo |
+| **What's different here** | The console builds the execution role's permissions as a *standalone* customer-managed policy (`iam:CreatePolicy`), not the inline policy every scripted/IaC method used — a genuinely different governance model |
+
 Deploys the calculator agent to AgentCore Runtime purely through the AWS Management Console --
 no CLI, no script, no IaC template. Reused the container image already pushed in
 `manual-container-build` (`bedrock-agentcore-calc-agent-manual:latest`) rather than building a
 fresh one -- the point of this module is the click-through experience itself, not another proof
 that the Docker/ECR pipeline works, which has already been demonstrated four times over.
+
+```mermaid
+graph LR
+    A["Console: Create Runtime form"] --> B["ec2:DescribeVpcs<br/>(populates VPC picker)"]
+    A --> C["bedrock:ListFoundationModels<br/>(populates model catalog)"]
+    A --> D["iam:CreatePolicy<br/>(standalone, not inline)"]
+    A --> E[Bedrock AgentCore Runtime]
+    D --> E
+```
 
 ## Files
 - `invoke_console_agent.py` -- same invoke pattern as every other module, for testing from a

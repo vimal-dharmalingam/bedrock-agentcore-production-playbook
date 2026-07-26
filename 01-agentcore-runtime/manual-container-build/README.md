@@ -1,9 +1,26 @@
 # manual-container-build
 
+## At a glance
+
+| | |
+|---|---|
+| **AWS services** | Bedrock AgentCore Runtime, ECR, IAM |
+| **Tool** | Manual `docker build`/push + raw boto3 — no CLI automation, no CodeBuild |
+| **Status** | ✅ Working end to end |
+| **Real errors hit & fixed** | 0 IAM gaps (existing grants covered it) + 2 real non-IAM bugs — a 30+ minute QEMU compile hang, and a silent `127.0.0.1`-bind bug from a missing `DOCKER_CONTAINER=1` env var |
+| **What's different here** | Every step is explicit and by hand — the clearest way to see exactly what `starter-toolkit-cli`'s `agentcore launch` does silently under the hood |
+
 Deploys the calculator agent to AgentCore Runtime as a container image, built and pushed by
 hand (no CLI automation, no CodeBuild) -- `docker build`, `docker push` to ECR, then boto3's
 `create_agent_runtime` pointed at that image URI. Unlike `starter-toolkit-cli` (where
 `agentcore launch` does all of this silently), every step here is explicit.
+
+```mermaid
+graph LR
+    A["docker build<br/>--platform arm64"] --> B[docker push to ECR]
+    B --> C["deploy_container.py<br/>create_agent_runtime"]
+    C --> D[Bedrock AgentCore Runtime]
+```
 
 ## Files
 - `my_calc_agent.py` — same agent code as every other sub-method

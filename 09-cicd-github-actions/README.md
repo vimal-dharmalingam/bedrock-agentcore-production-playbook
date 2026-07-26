@@ -1,8 +1,28 @@
 # 09-cicd-github-actions
 
+## At a glance
+
+| | |
+|---|---|
+| **AWS services** | Bedrock AgentCore Runtime, ECR, CodeBuild, IAM (OIDC federation) |
+| **Tool** | GitHub Actions (native YAML workflow) |
+| **Status** | ✅ Working end to end |
+| **Real errors hit & fixed** | 4 — OIDC "immutable subject claims" trust-policy mismatch, 2 missing AgentCore IAM actions, `ConflictException` on redeploy |
+| **What's different here** | Push to `main` → live redeploy, with zero long-lived AWS credentials stored anywhere (OIDC federation issues short-lived tokens per run) |
+
 First CI/CD pipeline in this repo. Wraps `01-agentcore-runtime/boto3-direct` (the AgentCore
 Runtime "boto3-direct" method): push to `main`, and the same agent gets rebuilt and redeployed
 automatically, with a smoke-test invoke at the end proving it actually works.
+
+```mermaid
+graph LR
+    A[Push to main] --> B["CI: checkout +<br/>pip install"]
+    B --> C["CD: OIDC AssumeRole<br/>(no stored AWS keys)"]
+    C --> D["deploy_my_agent.py<br/>Runtime.launch()"]
+    D --> E["CodeBuild builds image<br/>→ pushes to ECR"]
+    E --> F["AgentCore Runtime<br/>created / updated"]
+    F --> G["Smoke test invoke<br/>proves it actually works"]
+```
 
 ## Where the pieces live
 - **The workflow itself:** `.github/workflows/deploy-agentcore.yml` at the **repo root** --

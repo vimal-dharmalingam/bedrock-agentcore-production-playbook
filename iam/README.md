@@ -1,5 +1,15 @@
 # iam/ — the permission-debugging trail, consolidated
 
+## At a glance
+
+| | |
+|---|---|
+| **Scope** | Cross-cutting — every real IAM policy touched across all 10 modules, not a deploy target itself |
+| **Contents** | 10 customer-managed policies + 1 inline + 1 AWS-managed, exported live from the account (not retyped) |
+| **Status** | ✅ Complete — exactly at `always_learner`'s 10-managed-policy attachment cap |
+| **Real errors documented** | Every gap from every module, indexed by policy, plus 6 reusable patterns worth knowing cold |
+| **What's different here** | Not a deploy flow — a narrative index tying every permission gap in the repo back to the exact policy and fix |
+
 Every module in this repo (`00` through `09`) was built against a **deliberately narrow** IAM
 user, `always_learner`, rather than an admin/broad-access account. That was a design choice, not
 an oversight: the goal was to hit real `AccessDenied` errors, root-cause them the way you would
@@ -12,6 +22,21 @@ part that actually demonstrates operating AWS under real constraints, not just f
 tutorial with admin access.
 
 ## What's here
+
+```mermaid
+graph LR
+    U[always_learner IAM user] --> P1[AgentCoreCloudFormationDeployAccess]
+    U --> P2[AgentCoreCdkDeployAccess]
+    U --> P3[AgentCoreConsoleEc2ReadAccess]
+    U --> P4[AgentCoreLambdaComputeTargetAccess]
+    U --> P5[AgentCoreTerraformEcrAccess]
+    U --> P6[AgentCoreConsoleIamPolicyMgmt]
+    U --> P7[AgentCoreConsoleBedrockReadAccess]
+    U --> P8[BedrockAgentCoreCLIAccess]
+    U --> P9[BedrockAgentLambdaAccess]
+    U --> P10["BedrockAgentCoreFullAccess<br/>(AWS-managed)"]
+    U -.inline policy.-> P11[BedrockMarketplaceAccess]
+```
 
 `always-learner-policies/` -- a snapshot of every policy attached to `always_learner`, exported
 directly from the live AWS account (via `aws iam get-policy-version`), not retyped from memory.

@@ -1,8 +1,26 @@
 # 05-ec2 / terraform
 
+## At a glance
+
+| | |
+|---|---|
+| **AWS services** | EC2, IAM |
+| **Tool** | Terraform — genuine IaaS provisioning (AMI lookup, security group, instance profile), not just pointing at a pre-built artifact |
+| **Status** | ✅ Working end to end |
+| **Real errors hit & fixed** | 4 batches of IAM gaps, plus 5 distinct non-IAM root causes — the longest debugging chain in the repo so far |
+| **What's different here** | The first compute target with no managed invoke API — nothing calls the agent for you, so this module has to build the FastAPI server, the systemd service, *and* the boot script itself |
+
 The calculator agent hosted on a raw EC2 instance -- the first compute target in this repo with
 no managed invoke API in front of it. Single method per the pacing decision (breadth across
 `05`-`09` matters more than exhaustive depth on any one target).
+
+```mermaid
+graph LR
+    A[terraform apply] --> B[EC2 instance]
+    B --> C["cloud-init user_data.sh<br/>installs deps, writes systemd service"]
+    C --> D["FastAPI app.py<br/>/invoke, /health"]
+    D --> E["invoke_ec2_agent.py<br/>(plain HTTP, stdlib only)"]
+```
 
 ## How this differs from everything before it
 

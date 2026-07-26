@@ -1,7 +1,24 @@
 # 04-lambda / cloudformation
 
+## At a glance
+
+| | |
+|---|---|
+| **AWS services** | Lambda, IAM, S3 (reuses the bucket `direct-code-zip` already created) |
+| **Tool** | Raw, hand-authored CloudFormation YAML |
+| **Status** | ✅ Working end to end |
+| **Real errors hit & fixed** | 1 gap — a stack-naming case mismatch (`calc-agent-lambda-cfn` vs. the granted `CalcAgent*` pattern), fixed by renaming the stack, not by touching IAM |
+| **What's different here** | CloudFormation can't package or upload the zip itself — needs an extra manual `upload_code.py` step to S3 before deploy, unlike CDK or Terraform which handle the artifact directly |
+
 Same calculator agent, deployed via raw hand-written `AWS::Lambda::Function` CloudFormation --
 no CDK abstraction, no Terraform HCL, just the native template + `aws cloudformation deploy`.
+
+```mermaid
+graph LR
+    A["build_lambda_package.py<br/>(zip)"] --> B["upload_code.py<br/>(to S3)"]
+    B --> C["aws cloudformation deploy<br/>(template.yaml)"]
+    C --> D[Lambda function]
+```
 
 ## How this differs from cdk/ and terraform/
 

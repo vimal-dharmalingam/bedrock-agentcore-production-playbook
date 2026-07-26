@@ -1,5 +1,15 @@
 # direct-code-zip
 
+## At a glance
+
+| | |
+|---|---|
+| **AWS services** | Bedrock AgentCore Runtime, S3, IAM — no ECR, no CodeBuild |
+| **Tool** | Raw boto3, `codeConfiguration` (zip upload), no container at all |
+| **Status** | ✅ Working end to end |
+| **Real errors hit & fixed** | 0 — existing `BedrockAgentCoreFullAccess`/`BedrockAgentCoreCLIAccess` grants already covered it, confirmed by reasoning through the naming patterns before running anything |
+| **What's different here** | No Docker, no ECR, no CodeBuild — same mental model as a plain Lambda zip deploy; AWS manages the Python runtime, you own the code and arm64-compatible dependencies |
+
 Deploys the same calculator agent to AgentCore Runtime with no Docker, no ECR, no CodeBuild --
 just a zip file of code + dependencies, uploaded to S3, referenced directly by
 `create_agent_runtime`. AWS added this deploy mode in Nov 2025; it's the same mental model as
@@ -9,6 +19,13 @@ code and dependencies).
 Key constraint: AgentCore Runtime only runs on **arm64**. Pure Python packages don't care, but
 any dependency with compiled C code needs to be the Linux/arm64 build specifically, not
 whatever your local machine would normally install.
+
+```mermaid
+graph LR
+    A["build_deployment_package.py<br/>(zip, arm64 deps)"] --> B[S3 bucket]
+    B --> C["create_agent_runtime<br/>(codeConfiguration)"]
+    C --> D[Bedrock AgentCore Runtime]
+```
 
 ## Files
 - `my_calc_agent.py` — same agent code as the other sub-methods

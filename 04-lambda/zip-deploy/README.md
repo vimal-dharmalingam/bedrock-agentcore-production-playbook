@@ -1,9 +1,26 @@
 # 04-lambda / zip-deploy
 
+## At a glance
+
+| | |
+|---|---|
+| **AWS services** | Lambda, IAM |
+| **Tool** | Raw boto3, zip package (x86_64, no Docker) |
+| **Status** | ✅ Working end to end |
+| **Real errors hit & fixed** | 1 IAM gap — a naming-case mismatch (`calc_agent_*` vs. the existing `CalcAgent*` pattern) meant a new scoped policy was needed |
+| **What's different here** | No AgentCore SDK, no server at all — Lambda's request/response handler pattern instead of AgentCore Runtime's always-listening HTTP server |
+
 Deploys the calculator agent as a plain AWS Lambda function -- completely outside AgentCore
 Runtime. Same underlying model call (Claude via Bedrock), same Strands `Agent` + `calculator`
 tool, but a fundamentally different hosting model: Lambda's request/response handler pattern
 instead of AgentCore Runtime's always-listening HTTP server.
+
+```mermaid
+graph LR
+    A["build_lambda_package.py<br/>(zip, x86_64)"] --> B["deploy_lambda.py<br/>(create/update function)"]
+    B --> C[Lambda function]
+    C --> D[invoke_lambda_agent.py]
+```
 
 ## Files
 - `lambda_function.py` -- the agent, restructured as a plain `lambda_handler(event, context)`
