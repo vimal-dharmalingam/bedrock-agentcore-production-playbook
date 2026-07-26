@@ -77,10 +77,43 @@ stack deletion).
 
 ## IAM permissions
 
-(Document actual AccessDenied errors and fixes here as they're hit — first time
-`codepipeline:*`, `codebuild:CreateProject` for a top-level pipeline project, and
-`codestar-connections:*` have been touched in this project via CloudFormation, so treat
-everything as a new gap until proven otherwise, same caution every prior module needed.)
+First time `codepipeline:*`, `codebuild:CreateProject` for a top-level pipeline project, and
+`codestar-connections:*` were touched via CloudFormation in this project. Three gaps hit, all
+fixed by extending `AgentCoreCloudFormationDeployAccess` (not a new policy):
+
+1. **`codestar-connections:PassConnection` AccessDenied** on the `AWS::CodePipeline::Pipeline`
+   resource creation — since CloudFormation runs this under the caller's own credentials (same
+   pattern as `07-app-runner`), `always_learner` needed this action scoped to the connection ARN,
+   directly analogous to how `iam:PassRole` works for handing a role to a service.
+2. **`codepipeline:StartPipelineExecution` AccessDenied** when manually triggering the pipeline
+   after deploy — the original policy only covered pipeline *management* (create/update/delete),
+   not actually running it. Added `StartPipelineExecution`, `GetPipelineExecution`, and
+   `ListPipelineExecutions`.
+3. **5-versions-per-policy cap hit again** on `AgentCoreCloudFormationDeployAccess` while adding
+   fix #2 — same recurring pattern as `AgentCoreConsoleEc2ReadAccess` earlier in the project.
+   Deleted the oldest version (`v1`) before creating the new one.
+
+## A non-IAM bug: CodeBuild working directory persists across phases, not just within one
+
+Not a permission gap — a real logic bug in the original `buildspec.yml`. Each phase (`install`,
+`build`, `post_build`) had its own `cd 01-agentcore-runtime/boto3-direct` command, on the
+assumption that CodeBuild resets to `$CODEBUILD_SRC_DIR` at the start of every phase. It doesn't:
+the shell's working directory carries over across *all* phases of a single build, not just
+between commands within one phase. So `install`'s `cd` correctly landed in
+`.../01-agentcore-runtime/boto3-direct`, but `build`'s `cd 01-agentcore-runtime/boto3-direct`
+then tried to descend into a *nested* subdirectory of that same name relative to where the shell
+already was — which doesn't exist, failing with a plain `No such file or directory`. Root-caused
+via CloudWatch Logs (`aws logs get-log-events`, since `aws logs tail`/`FilterLogEvents` wasn't
+granted to `always_learner`) showing the exact failing command and phase. Fixed by anchoring
+every `cd` to the absolute `$CODEBUILD_SRC_DIR` instead of a bare relative path, which is correct
+regardless of what directory a previous phase left the shell in.
+
+**Separate Windows-only wrinkle hit while debugging this**: `aws logs get-log-events --output text`
+(and even `--output json`) crashed with `'charmap' codec can't encode characters` on this Windows
+terminal — pip's progress-bar output contains characters the console's default codepage can't
+render, even after `chcp 65001` and `set PYTHONIOENCODING=utf-8`. Worked around by calling
+`boto3`'s `get_log_events` directly via a one-line `python -c` script and writing the result to a
+file with explicit `encoding="utf-8"`, sidestepping the AWS CLI's own output formatter entirely.
 
 ## Notes / gotchas
 - Stack name deliberately `CalcAgentCodePipelineStack`, matching the already-granted

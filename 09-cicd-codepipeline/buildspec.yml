@@ -11,17 +11,17 @@ phases:
     runtime-versions:
       python: 3.11
     commands:
-      - cd 01-agentcore-runtime/boto3-direct
+      - cd "$CODEBUILD_SRC_DIR/01-agentcore-runtime/boto3-direct"
       - pip install -r requirements.txt
 
   build:
     commands:
-      - cd 01-agentcore-runtime/boto3-direct
+      - cd "$CODEBUILD_SRC_DIR/01-agentcore-runtime/boto3-direct"
       - python deploy_my_agent.py
 
   post_build:
     commands:
-      - cd 01-agentcore-runtime/boto3-direct
+      - cd "$CODEBUILD_SRC_DIR/01-agentcore-runtime/boto3-direct"
       - export AGENT_ARN=$(cat agent_arn.txt)
       - echo "Smoke testing $AGENT_ARN"
       - >
